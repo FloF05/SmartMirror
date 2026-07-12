@@ -1,0 +1,22 @@
+# Logs
+logs/
+
+# Uploads
+uploads/
+
+# Datenbank
+database/*.db
+
+# Konfiguration mit geheimen Daten
+config/secrets.php
+
+# Temporäre Dateien
+*.tmp
+*.log
+
+# Editor Dateien
+.vscode/
+.idea/
+
+# System
+.DS_Store
