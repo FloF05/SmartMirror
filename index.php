@@ -22,7 +22,7 @@ require "app/module_loader.php";
 
 
 <link rel="stylesheet" href="css/style.css">
-
+<link rel="stylesheet" href="css/layout.css">
 <link rel="stylesheet" href="modules/clock/clock.css">
 
 
