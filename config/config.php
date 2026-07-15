@@ -8,12 +8,12 @@ $config = [
     "location" => "Berlin",
 
     "modules" => [
-
         "clock",
         "weather",
-        "slideshow"
-
-    ]
+        "slideshow",
+        "calendar",
+        "info"
+    ]  
 
 ];
 
