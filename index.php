@@ -3,6 +3,8 @@
 require "config/config.php";
 
 require "app/module_loader.php";
+require "app/css_loader.php";
+require "app/js_loader.php";
 
 ?>
 
@@ -23,7 +25,8 @@ require "app/module_loader.php";
 
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/layout.css">
-<link rel="stylesheet" href="modules/clock/clock.css">
+
+<?php loadModuleCSS($config["modules"]); ?>
 
 
 </head>
@@ -52,7 +55,7 @@ foreach($config["modules"] as $module)
 </div>
 
 
-<script src="modules/clock/clock.js"></script>
+<?php loadModuleJS($config["modules"]); ?>
 
 
 </body>
