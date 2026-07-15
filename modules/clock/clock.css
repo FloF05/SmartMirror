@@ -1,6 +1,40 @@
-.clock-module
-{
+.clock-module {
 
-font-size:80px;
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+}
+
+
+#clock-time {
+
+    font-size:120px;
+
+    font-weight:bold;
+
+}
+
+
+#clock-date {
+
+    font-size:35px;
+
+    margin-top:20px;
+
+}
+
+
+#clock-greeting {
+
+    font-size:30px;
+
+    margin-top:15px;
+
+    opacity:0.8;
 
 }

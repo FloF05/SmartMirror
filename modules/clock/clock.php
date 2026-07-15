@@ -6,4 +6,14 @@
     </div>
 
 
+    <div id="clock-date">
+        --
+    </div>
+
+
+    <div id="clock-greeting">
+        --
+    </div>
+
+
 </div>
