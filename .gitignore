@@ -20,3 +20,6 @@ config/secrets.php
 
 # System
 .DS_Store
+
+
+config/secrets.php

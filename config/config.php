@@ -5,7 +5,7 @@ $config = [
 
     "name" => "Mirror",
 
-    "location" => "Oerlinghausen",
+    "location" => "Berlin",
 
     "timezone" => "Europe/Berlin",
 
@@ -16,6 +16,16 @@ $config = [
         "format" => "24"
 
     ],
+
+    "weather" => [
+
+    "city" => "Berlin",
+
+    "country" => "DE",
+
+    "units" => "metric"
+
+],
 
     "modules" => [
 

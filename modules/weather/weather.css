@@ -1,0 +1,43 @@
+.weather-module {
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+}
+
+
+.weather-module h2 {
+
+    font-size:40px;
+
+}
+
+
+#weather-temp {
+
+    font-size:70px;
+
+    font-weight:bold;
+
+}
+
+
+#weather-description {
+
+    font-size:30px;
+
+}
+
+
+#weather-feels {
+
+    font-size:25px;
+
+    opacity:0.7;
+
+}

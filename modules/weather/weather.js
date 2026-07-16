@@ -1,0 +1,1 @@
+console.log("Weather module loaded");
