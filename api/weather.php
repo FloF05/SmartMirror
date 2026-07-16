@@ -20,7 +20,14 @@ $url = "https://api.openweathermap.org/data/2.5/weather"
      . "&lang=de";
 
 
-$response = file_get_contents($url);
+$ch = curl_init($url);
+
+
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+
+
+$response = curl_exec($ch);
 
 
 if ($response === false) {
@@ -28,8 +35,27 @@ if ($response === false) {
     http_response_code(500);
 
     echo json_encode([
-        "error" => "Wetterdaten konnten nicht abgerufen werden."
+        "error" => "Wetterdaten konnten nicht abgerufen werden.",
+        "details" => curl_error($ch)
     ]);
+
+    curl_close($ch);
+
+    exit;
+
+}
+
+
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+curl_close($ch);
+
+
+if ($httpCode !== 200) {
+
+    http_response_code($httpCode);
+
+    echo $response;
 
     exit;
 
@@ -37,4 +63,3 @@ if ($response === false) {
 
 
 echo $response;
-?>
