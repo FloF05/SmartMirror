@@ -43,6 +43,6 @@ if(slideshowImages.length > 0)
 
         showImage(currentImage);
 
-    }, 5000);
+    }, slideshowInterval);
 
 }

@@ -27,6 +27,12 @@ $config = [
 
 ],
 
+"slideshow" => [
+
+    "interval" => 5000
+
+],
+
     "modules" => [
 
         "clock",

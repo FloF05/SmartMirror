@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . "/../../config/config.php";
 
 $uploadDirectory = __DIR__ . "/../../uploads/";
 
@@ -12,55 +13,84 @@ $allowedExtensions = [
 ];
 
 
-$files = scandir($uploadDirectory);
-
-
-foreach($files as $file)
+if(is_dir($uploadDirectory))
 {
 
-    $filePath = $uploadDirectory . $file;
+    $files = scandir($uploadDirectory);
 
 
-    if(!is_file($filePath))
+    foreach($files as $file)
     {
-        continue;
-    }
+
+        $filePath = $uploadDirectory . $file;
 
 
-    $extension =
-    strtolower(
-        pathinfo($file, PATHINFO_EXTENSION)
-    );
+        if(!is_file($filePath))
+        {
+            continue;
+        }
 
 
-    if(
-        in_array(
-            $extension,
-            $allowedExtensions
+        $extension =
+        strtolower(
+            pathinfo($file, PATHINFO_EXTENSION)
+        );
+
+
+        if(
+            in_array(
+                $extension,
+                $allowedExtensions
+            )
         )
-    )
-    {
-        $images[] = $file;
+        {
+            $images[] = $file;
+        }
+
     }
 
 }
 
+
+shuffle($images);
+
+
 ?>
 
+<script>
+
+const slideshowInterval =
+<?= $config["slideshow"]["interval"] ?>;
+
+</script>
 
 <div class="slideshow-module">
 
-    <div id="slideshow">
+    <?php if(count($images) > 0): ?>
 
-        <?php foreach($images as $image): ?>
+        <div id="slideshow">
 
-            <img
-                src="uploads/<?= htmlspecialchars($image) ?>"
-                class="slideshow-image"
-            >
+            <?php foreach($images as $image): ?>
 
-        <?php endforeach; ?>
+                <img
+                    src="uploads/<?= htmlspecialchars($image) ?>"
+                    class="slideshow-image"
+                    alt="Slideshow Bild"
+                >
 
-    </div>
+            <?php endforeach; ?>
+
+        </div>
+
+
+    <?php else: ?>
+
+        <div class="slideshow-empty">
+
+            Keine Bilder vorhanden.
+
+        </div>
+
+    <?php endif; ?>
 
 </div>
