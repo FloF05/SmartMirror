@@ -45,8 +45,15 @@ body {
     grid-area: weather;
 }
 
-.slideshow-module {
+.slideshow-module
+{
     grid-area: slideshow;
+
+    min-width: 0;
+
+    min-height: 0;
+
+    overflow: hidden;
 }
 
 .calendar-module {
