@@ -38,3 +38,23 @@
     opacity:0.8;
 
 }
+
+@media (orientation: portrait)
+{
+    #clock-time
+    {
+        font-size: 6rem;
+    }
+
+
+    #clock-date
+    {
+        font-size: 2rem;
+    }
+
+
+    #clock-greeting
+    {
+        font-size: 2rem;
+    }
+}

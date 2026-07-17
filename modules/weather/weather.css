@@ -64,3 +64,31 @@
 
     opacity: 0.5;
 }
+
+@media (orientation: portrait)
+{
+    #weather-location
+    {
+        font-size: 2.5rem;
+    }
+
+
+    #weather-icon img
+    {
+        width: 140px;
+
+        height: 140px;
+    }
+
+
+    #weather-temp
+    {
+        font-size: 4rem;
+    }
+
+
+    #weather-description
+    {
+        font-size: 1.8rem;
+    }
+}
