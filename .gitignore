@@ -2,7 +2,7 @@
 logs/
 
 # Uploads
-uploads/
+# uploads/
 
 # Datenbank
 database/*.db
