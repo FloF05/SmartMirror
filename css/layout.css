@@ -63,3 +63,25 @@ body {
 .info-module {
     grid-area: info;
 }
+
+@media (orientation: portrait)
+{
+    .mirror
+    {
+        grid-template-columns: 1fr;
+
+        grid-template-rows:
+            200px
+            260px
+            1fr
+            180px
+            180px;
+
+        grid-template-areas:
+            "clock"
+            "weather"
+            "slideshow"
+            "calendar"
+            "info";
+    }
+}
