@@ -7,17 +7,72 @@ __DIR__ . "/../uploads/";
 $message = "";
 
 
-if($_SERVER["REQUEST_METHOD"] === "POST")
+
+/*
+--------------------------------------------------
+BILD LÖSCHEN
+--------------------------------------------------
+*/
+
+
+if(
+    $_SERVER["REQUEST_METHOD"] === "POST"
+    &&
+    isset($_POST["delete"])
+)
 {
 
+    $filename =
+    basename(
+        $_POST["delete"]
+    );
+
+
+    $filePath =
+    $uploadDirectory
+    . $filename;
+
+
     if(
-        isset($_FILES["image"])
-        &&
-        $_FILES["image"]["error"] === UPLOAD_ERR_OK
+        is_file($filePath)
     )
     {
 
-        $file = $_FILES["image"];
+        unlink($filePath);
+
+
+        $message =
+        "Bild erfolgreich gelöscht.";
+
+    }
+
+}
+
+
+
+/*
+--------------------------------------------------
+BILD HOCHLADEN
+--------------------------------------------------
+*/
+
+
+if(
+    $_SERVER["REQUEST_METHOD"] === "POST"
+    &&
+    isset($_FILES["image"])
+)
+{
+
+    if(
+        $_FILES["image"]["error"]
+        ===
+        UPLOAD_ERR_OK
+    )
+    {
+
+        $file =
+        $_FILES["image"];
 
 
         $extension =
@@ -95,11 +150,80 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
 
     }
 
-    else
+}
+
+
+
+/*
+--------------------------------------------------
+BILDER AUSLESEN
+--------------------------------------------------
+*/
+
+
+$images = [];
+
+
+if(
+    is_dir(
+        $uploadDirectory
+    )
+)
+{
+
+    $files =
+    scandir(
+        $uploadDirectory
+    );
+
+
+    foreach(
+        $files
+        as $file
+    )
     {
 
-        $message =
-        "Keine Datei ausgewählt.";
+        $filePath =
+        $uploadDirectory
+        . $file;
+
+
+        if(
+            !is_file(
+                $filePath
+            )
+        )
+        {
+            continue;
+        }
+
+
+        $extension =
+        strtolower(
+            pathinfo(
+                $file,
+                PATHINFO_EXTENSION
+            )
+        );
+
+
+        if(
+            in_array(
+                $extension,
+                [
+                    "jpg",
+                    "jpeg",
+                    "png",
+                    "webp"
+                ]
+            )
+        )
+        {
+
+            $images[] =
+            $file;
+
+        }
 
     }
 
@@ -117,9 +241,94 @@ if($_SERVER["REQUEST_METHOD"] === "POST")
 
 <meta charset="UTF-8">
 
+
 <title>
 SmartMirror Bildverwaltung
 </title>
+
+
+<style>
+
+body
+{
+
+    font-family:
+    Arial,
+    sans-serif;
+
+    background:
+    #111;
+
+    color:
+    white;
+
+    padding:
+    30px;
+
+}
+
+
+.gallery
+{
+
+    display:
+    grid;
+
+    grid-template-columns:
+    repeat(
+        auto-fill,
+        minmax(
+            200px,
+            1fr
+        )
+    );
+
+    gap:
+    20px;
+
+}
+
+
+.image-card
+{
+
+    background:
+    #222;
+
+    padding:
+    10px;
+
+}
+
+
+.image-card img
+{
+
+    width:
+    100%;
+
+    height:
+    180px;
+
+    object-fit:
+    contain;
+
+}
+
+
+button
+{
+
+    padding:
+    8px;
+
+    cursor:
+    pointer;
+
+}
+
+
+</style>
 
 </head>
 
@@ -128,19 +337,28 @@ SmartMirror Bildverwaltung
 
 
 <h1>
-Bild hochladen
+SmartMirror Bildverwaltung
 </h1>
+
 
 
 <?php if($message): ?>
 
 <p>
 
-<?= htmlspecialchars($message) ?>
+<?= htmlspecialchars(
+    $message
+) ?>
 
 </p>
 
 <?php endif; ?>
+
+
+
+<h2>
+Bild hochladen
+</h2>
 
 
 <form
@@ -157,19 +375,87 @@ Bild hochladen
 >
 
 
-<br><br>
+<button
+    type="submit"
+>
+
+Hochladen
+
+</button>
+
+
+</form>
+
+
+
+<h2>
+Vorhandene Bilder
+</h2>
+
+
+
+<div class="gallery">
+
+
+<?php foreach(
+    $images
+    as $image
+): ?>
+
+
+<div class="image-card">
+
+
+<img
+    src="../uploads/<?= htmlspecialchars(
+        $image
+    ) ?>"
+>
+
+
+<p>
+
+<?= htmlspecialchars(
+    $image
+) ?>
+
+</p>
+
+
+
+<form
+    method="POST"
+>
+
+
+<input
+    type="hidden"
+    name="delete"
+    value="<?= htmlspecialchars(
+        $image
+    ) ?>"
+>
 
 
 <button
     type="submit"
 >
 
-Bild hochladen
+Löschen
 
 </button>
 
 
 </form>
+
+
+</div>
+
+
+<?php endforeach; ?>
+
+
+</div>
 
 
 </body>
