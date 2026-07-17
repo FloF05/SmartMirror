@@ -1,14 +1,39 @@
 <?php
 
-function loadModuleJS(array $modules): void
+function loadModuleJS($modules)
 {
-    foreach ($modules as $module) {
 
-        $js = "modules/$module/$module.js";
+    global $config;
 
-        if (file_exists($js)) {
-            echo '<script src="' . $js . '"></script>' . PHP_EOL;
+
+    foreach($modules as $module)
+    {
+
+        if($module === "slideshow")
+        {
+
+            echo "<script>";
+
+            echo "const slideshowInterval = "
+            . $config["slideshow"]["interval"]
+            . ";";
+
+            echo "</script>";
+
         }
+
+
+        $path =
+        "modules/"
+        . $module
+        . "/"
+        . $module
+        . ".js";
+
+
+        echo '<script src="' . $path . '"></script>';
+
     }
+
 }
 ?>

@@ -57,12 +57,6 @@ shuffle($images);
 
 ?>
 
-<script>
-
-const slideshowInterval =
-<?= $config["slideshow"]["interval"] ?>;
-
-</script>
 
 <div class="slideshow-module">
 
