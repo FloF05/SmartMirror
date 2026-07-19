@@ -7,6 +7,19 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    const showEmptyState = (message) => {
+        if (emptyState) {
+            emptyState.textContent = message;
+            emptyState.style.display = 'block';
+        }
+    };
+
+    const hideEmptyState = () => {
+        if (emptyState) {
+            emptyState.style.display = 'none';
+        }
+    };
+
     const renderMonthView = (events) => {
         const now = new Date();
         const year = now.getFullYear();
@@ -125,7 +138,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
             const events = Array.isArray(data.events) ? data.events : [];
-            emptyState.style.display = events.length === 0 ? 'block' : 'none';
+
+            if (events.length === 0) {
+                showEmptyState('Keine Termine gefunden.');
+            } else {
+                hideEmptyState();
+            }
 
             if (data.view === 'week') {
                 renderWeekView(events);
@@ -134,8 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             renderMonthView(events);
         } catch (error) {
-            emptyState.style.display = 'block';
-            emptyState.textContent = 'Kalender konnte nicht geladen werden.';
+            showEmptyState('Kalender konnte nicht geladen werden.');
         }
     };
 
