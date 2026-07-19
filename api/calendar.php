@@ -1,12 +1,21 @@
 <?php
 header('Content-Type: application/json');
 
-$configPath = __DIR__ . '/../config/calendar_settings.json';
+$configPath = __DIR__ . '/../uploads/calendar_settings.json';
+$legacyConfigPath = __DIR__ . '/../config/calendar_settings.json';
 $calendarFile = __DIR__ . '/../uploads/calendar.ics';
 
 $settings = [
     'view' => 'month'
 ];
+
+if (!file_exists($configPath)) {
+    if (file_exists($legacyConfigPath)) {
+        copy($legacyConfigPath, $configPath);
+    } else {
+        file_put_contents($configPath, json_encode($settings, JSON_PRETTY_PRINT));
+    }
+}
 
 if (file_exists($configPath)) {
     $decoded = json_decode(file_get_contents($configPath), true);

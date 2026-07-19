@@ -4,6 +4,9 @@ $uploadDirectory =
 __DIR__ . "/../uploads/";
 
 $calendarSettingsFile =
+__DIR__ . "/../uploads/calendar_settings.json";
+
+$legacyCalendarSettingsFile =
 __DIR__ . "/../config/calendar_settings.json";
 
 $images = [];
@@ -22,6 +25,33 @@ if(
     json_decode(
         file_get_contents(
             $calendarSettingsFile
+        ),
+        true
+    );
+
+    if(
+        is_array(
+            $decodedSettings
+        )
+    )
+    {
+        $calendarSettings =
+        array_merge(
+            $calendarSettings,
+            $decodedSettings
+        );
+    }
+}
+elseif(
+    file_exists(
+        $legacyCalendarSettingsFile
+    )
+)
+{
+    $decodedSettings =
+    json_decode(
+        file_get_contents(
+            $legacyCalendarSettingsFile
         ),
         true
     );
@@ -181,6 +211,14 @@ Kalender-Einstellungen
 <p>
 Aktuelle Ansicht: <strong><?= htmlspecialchars($calendarSettings["view"] === "week" ? "Woche" : "Monat") ?></strong>
 </p>
+
+<?php if (isset($_GET['success'])): ?>
+<p class="success">Einstellungen gespeichert.</p>
+<?php endif; ?>
+
+<?php if (isset($_GET['error'])): ?>
+<p class="error">Es gab ein Problem beim Speichern.</p>
+<?php endif; ?>
 
 <form
     method="POST"
