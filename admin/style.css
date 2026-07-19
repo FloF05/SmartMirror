@@ -76,6 +76,25 @@ button
 
 }
 
+label
+{
+    display:
+    block;
+
+    margin-bottom:
+    10px;
+}
+
+select,
+input[type="file"]
+{
+    margin-top:
+    5px;
+
+    display:
+    block;
+}
+
 
 .success
 {

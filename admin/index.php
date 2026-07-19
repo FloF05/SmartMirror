@@ -3,8 +3,42 @@
 $uploadDirectory =
 __DIR__ . "/../uploads/";
 
+$calendarSettingsFile =
+__DIR__ . "/../config/calendar_settings.json";
 
 $images = [];
+
+$calendarSettings = [
+    "view" => "month"
+];
+
+if(
+    file_exists(
+        $calendarSettingsFile
+    )
+)
+{
+    $decodedSettings =
+    json_decode(
+        file_get_contents(
+            $calendarSettingsFile
+        ),
+        true
+    );
+
+    if(
+        is_array(
+            $decodedSettings
+        )
+    )
+    {
+        $calendarSettings =
+        array_merge(
+            $calendarSettings,
+            $decodedSettings
+        );
+    }
+}
 
 
 if(
@@ -139,6 +173,43 @@ Es ist ein Fehler aufgetreten.
 <?php endif; ?>
 
 
+
+<h2>
+Kalender-Einstellungen
+</h2>
+
+<p>
+Aktuelle Ansicht: <strong><?= htmlspecialchars($calendarSettings["view"] === "week" ? "Woche" : "Monat") ?></strong>
+</p>
+
+<form
+    method="POST"
+    action="save_calendar.php"
+    enctype="multipart/form-data"
+>
+
+<label>
+Ansicht
+<select name="calendar_view">
+<option value="month" <?= $calendarSettings["view"] === "month" ? "selected" : "" ?>>Monat</option>
+<option value="week" <?= $calendarSettings["view"] === "week" ? "selected" : "" ?>>Woche</option>
+</select>
+</label>
+
+<br><br>
+
+<label>
+ICS-Datei importieren
+<input type="file" name="calendar_ics" accept=".ics">
+</label>
+
+<br><br>
+
+<button type="submit">
+Speichern
+</button>
+
+</form>
 
 <h2>
 Bild hochladen
