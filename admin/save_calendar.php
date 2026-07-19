@@ -53,5 +53,7 @@ if (!is_dir(__DIR__ . '/../uploads')) {
 }
 
 file_put_contents($settingsPath, json_encode($settings, JSON_PRETTY_PRINT));
-header('Location: index.php?success=calendar');
+
+$redirectTarget = '../index.php?reload=1';
+header('Location: ' . $redirectTarget);
 exit;
