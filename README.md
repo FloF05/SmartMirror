@@ -1,6 +1,6 @@
 # SmartMirror
 
-Webbasierter Smart Mirror auf einem Raspberry Pi Zero 2 W.
+Webbasierter Smart Mirror auf einem Raspberry Pi Zero W.
 
 Ein Nginx mit PHP liefert ein Vollbild-Dashboard aus, das Chromium im
 Kiosk-Modus auf dem Display anzeigt. Alle Inhalte lassen sich über einen

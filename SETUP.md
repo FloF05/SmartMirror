@@ -1,13 +1,13 @@
 # SmartMirror auf dem Raspberry Pi einrichten
 
 Anleitung für einen komplett neuen Raspberry Pi. Von der leeren SD-Karte bis
-zum laufenden Spiegel sind es sechs Schritte.
+zum laufenden Spiegel sind es sieben Schritte.
 
 ---
 
 ## Was du brauchst
 
-* Raspberry Pi Zero 2 W
+* Raspberry Pi Zero W (ARMv6, 512 MB RAM)
 * microSD-Karte (mindestens 8 GB, besser 16 GB)
 * Display mit HDMI-Controller
 * Raspberry Pi Imager auf dem Windows-PC
@@ -21,16 +21,22 @@ Im **Raspberry Pi Imager**:
 
 | Feld | Wert |
 |---|---|
-| Betriebssystem | Raspberry Pi OS **Lite** (64 Bit), aktuelle Version |
+| Betriebssystem | Raspberry Pi OS **Lite** (32 Bit), aktuelle Version |
 | Speicherkarte | die microSD-Karte |
 
-**Lite** ist entscheidend: die Desktop-Version bringt einen kompletten
-Arbeitsplatz mit, der auf 512 MB RAM neben Chromium keinen Platz hat. Die
-Anzeige übernimmt cage – ein Compositor, der nichts weiter kann, als eine
-einzige Anwendung im Vollbild zu zeigen.
+**32 Bit ist Pflicht.** Der Pi Zero W hat einen ARMv6-Kern (BCM2835,
+ein Rechenkern). Ein 64-Bit-Image gibt es für diese CPU nicht.
+
+**Lite** ist ebenfalls Pflicht: die Desktop-Version passt nicht neben einen
+Browser in 512 MB RAM.
 
 Die genaue OS-Version ist egal, `setup.sh` erkennt die PHP-Version selbst
 und konfiguriert Nginx passend.
+
+> **Hinweis zur Anzeige:** Auf ARMv6 gibt es kein Chromium – der Build der
+> Raspberry Pi Foundation setzt ARMv7 voraus. Der Webserver läuft auf dieser
+> Hardware einwandfrei, die Vollbild-Anzeige auf dem Display braucht aber
+> einen leichteren Browser. Welcher hier in Frage kommt, klärt Schritt 6.
 
 Vor dem Schreiben auf **Einstellungen bearbeiten** klicken. Das ist der
 wichtigste Teil – hier vorkonfiguriert, entfällt später die gesamte
@@ -119,15 +125,17 @@ sudo deploy/setup.sh
 Das Skript erledigt alles Weitere und fragt dabei einmal nach dem
 OpenWeather-API-Key:
 
-* System aktualisieren, Pakete installieren
-  (Nginx, PHP-FPM, Chromium, cage, avahi)
+* System aktualisieren, Pakete installieren (Nginx, PHP-FPM, avahi)
 * PHP-Version selbst erkennen und Nginx passend konfigurieren
   – funktioniert mit Bookworm (PHP 8.2) wie Trixie (PHP 8.4)
 * Schreibrechte für `uploads/`, `data/`, `cache/` setzen
-* Kiosk-Dienst installieren, der beim Booten startet
 * SD-Karte schonen: Swap auf zram, Logs in den RAM
+* Kiosk-Dienst einrichten – **nur wenn die Hardware einen passenden
+  Browser hergibt.** Auf ARMv6 wird der Schritt übersprungen, mit
+  entsprechendem Hinweis. Der Server läuft trotzdem vollständig.
 
-Das Skript darf jederzeit erneut laufen – es ändert nur, was noch nicht stimmt.
+Auf einem Pi Zero W dauert das **30 bis 45 Minuten**. Das Skript darf
+jederzeit erneut laufen – es ändert nur, was noch nicht stimmt.
 
 Danach neu starten:
 
@@ -135,11 +143,34 @@ Danach neu starten:
 sudo reboot
 ```
 
-Nach dem Neustart zeigt das Display den Spiegel im Vollbild.
+Steuern lässt sich der Kiosk-Teil über eine Umgebungsvariable:
+
+```bash
+sudo KIOSK=no  deploy/setup.sh    # nur Server
+sudo KIOSK=yes deploy/setup.sh    # Kiosk erzwingen
+```
 
 ---
 
-## Schritt 6 – Inhalte einrichten
+## Schritt 6 – Anzeige klären (nur ARMv6)
+
+Auf dem Pi Zero W ist offen, welcher Browser die Vollbild-Anzeige übernimmt.
+Das Prüfskript beantwortet das – es liest nur aus und ändert nichts:
+
+```bash
+deploy/probe.sh
+```
+
+Es meldet Architektur, RAM, verfügbare Browser mit JavaScript-Unterstützung,
+den Anzeige-Stack (Wayland und X11) und die Grafiktreiber. Aus dieser Ausgabe
+ergibt sich, welcher Kiosk-Modus auf dieser Hardware überhaupt möglich ist.
+
+> Browser ohne JavaScript – Dillo, NetSurf – scheiden aus. Der Spiegel
+> aktualisiert Uhr, Wetter und Kalender vollständig über JavaScript.
+
+---
+
+## Schritt 7 – Inhalte einrichten
 
 Im Browser am PC: **<http://mirror.local/admin/>**
 
@@ -207,13 +238,13 @@ Häufigste Ursachen:
 
 * **`Permission denied` auf `/dev/dri`** – der Benutzer war beim Start noch
   nicht in der Gruppe `video`. Ein Neustart behebt das.
-* **Chromium startet und stirbt sofort** – meist zu wenig Speicher. Prüfen
-  mit `free -h`, ob zram als Swap aktiv ist, und mit
-  `journalctl -k | grep -i "out of memory"`, ob der Kernel ihn abgeschossen
-  hat. Passiert das dauerhaft, ist die 32-Bit-Version von Raspberry Pi OS
-  Lite die Notlösung: sie braucht spürbar weniger Arbeitsspeicher. Am
-  Projekt ändert sich dabei nichts, `setup.sh` läuft auf beiden
-  Architekturen.
+* **Der Browser startet und stirbt sofort** – meist zu wenig Speicher.
+  Prüfen mit `free -h`, ob zram als Swap aktiv ist, und mit
+  `journalctl -k | grep -i "out of memory"`, ob der Kernel ihn
+  abgeschossen hat.
+* **Der Dienst existiert gar nicht** – dann hat `setup.sh` den Kiosk-Teil
+  übersprungen, weil kein passender Browser gefunden wurde. `deploy/probe.sh`
+  zeigt, was zur Verfügung steht.
 
 Hinweis: `setup.sh` schaltet die Textkonsole auf `tty1` ab, weil sie sich
 sonst mit dem Kiosk um den Bildschirm streitet. Der Zugang läuft ab dann

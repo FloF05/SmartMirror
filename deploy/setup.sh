@@ -11,6 +11,15 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ROTATION="${ROTATION:-90}"
 
+# Der Kiosk-Teil (Browser im Vollbild auf dem Display) braucht Hardware, die
+# einen aktuellen Browser packt. Auf ARMv6 - Pi Zero W, Pi 1 - gibt es kein
+# Chromium; welcher Browser dort läuft, klärt deploy/probe.sh.
+#
+#   sudo deploy/setup.sh                 Server, Kiosk nur wenn möglich
+#   sudo KIOSK=no deploy/setup.sh        nur Server
+#   sudo KIOSK=yes deploy/setup.sh       Kiosk erzwingen
+KIOSK="${KIOSK:-auto}"
+
 # ---------------------------------------------------------------------------
 
 info()  { printf "\n\033[1;34m==>\033[0m %s\n" "$*"; }
@@ -43,22 +52,53 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
     php-fpm php-curl php-mbstring \
     git curl \
     avahi-daemon \
-    cage seatd \
     zram-tools
-ok "Basispakete installiert"
+ok "Serverpakete installiert"
 
-# Der Paketname hat sich zwischen den OS-Versionen geändert.
-if command -v chromium >/dev/null 2>&1; then
-    CHROMIUM="$(command -v chromium)"
-elif command -v chromium-browser >/dev/null 2>&1; then
-    CHROMIUM="$(command -v chromium-browser)"
-else
-    info "Chromium installieren"
-    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq chromium \
-        || DEBIAN_FRONTEND=noninteractive apt-get install -y -qq chromium-browser
-    CHROMIUM="$(command -v chromium || command -v chromium-browser)"
+# --- Kiosk-Fähigkeit klären ------------------------------------------------
+
+ARCH="$(uname -m)"
+CHROMIUM=""
+
+if [[ "$KIOSK" != "no" ]]; then
+
+    info "Anzeige-Umgebung prüfen"
+    ok "Architektur: $ARCH"
+
+    if [[ "$ARCH" == "armv6l" && "$KIOSK" == "auto" ]]; then
+        warn "ARMv6 erkannt - für diese CPU gibt es kein Chromium."
+        warn "Der Kiosk-Teil wird übersprungen, der Server läuft trotzdem."
+        warn "Welcher Browser hier läuft, klärt:  deploy/probe.sh"
+        KIOSK="no"
+    else
+        # Der Paketname unterscheidet sich je nach OS-Version.
+        for candidate in chromium chromium-browser; do
+            if command -v "$candidate" >/dev/null 2>&1; then
+                CHROMIUM="$(command -v "$candidate")"
+                break
+            fi
+        done
+
+        if [[ -z "$CHROMIUM" ]]; then
+            DEBIAN_FRONTEND=noninteractive apt-get install -y -qq chromium 2>/dev/null \
+                || DEBIAN_FRONTEND=noninteractive apt-get install -y -qq chromium-browser 2>/dev/null \
+                || true
+            CHROMIUM="$(command -v chromium 2>/dev/null || command -v chromium-browser 2>/dev/null || true)"
+        fi
+
+        if [[ -z "$CHROMIUM" ]]; then
+            warn "Kein Chromium installierbar - Kiosk-Teil wird übersprungen."
+            warn "Alternativen zeigt:  deploy/probe.sh"
+            KIOSK="no"
+        else
+            DEBIAN_FRONTEND=noninteractive apt-get install -y -qq cage seatd || {
+                warn "cage nicht verfügbar - Kiosk-Teil wird übersprungen."
+                KIOSK="no"
+            }
+            [[ "$KIOSK" == "no" ]] || ok "Browser: $CHROMIUM"
+        fi
+    fi
 fi
-ok "Chromium: $CHROMIUM"
 
 # --- 2. PHP-Version ermitteln ----------------------------------------------
 
@@ -147,28 +187,37 @@ ok "Nginx läuft"
 
 # --- 6. Kiosk-Dienst -------------------------------------------------------
 
-info "Kiosk-Dienst einrichten"
+if [[ "$KIOSK" == "no" ]]; then
 
-# Zugriff auf Grafik und Eingabegeräte
-usermod -aG video,render,input,tty "$TARGET_USER"
+    info "Kiosk-Dienst übersprungen"
+    ok "Der Spiegel ist über den Browser eines anderen Geräts erreichbar."
 
-# Ohne linger gibt es kein /run/user/UID und cage startet nicht
-loginctl enable-linger "$TARGET_USER" >/dev/null 2>&1 || true
-systemctl enable --now seatd >/dev/null 2>&1 || true
+else
 
-sed -e "s|__USER__|${TARGET_USER}|g" \
-    -e "s|__UID__|${TARGET_UID}|g" \
-    -e "s|__CHROMIUM__|${CHROMIUM}|g" \
-    -e "s|__ROTATION__|${ROTATION}|g" \
-    "$PROJECT_DIR/deploy/smartmirror-kiosk.service" \
-    > /etc/systemd/system/smartmirror-kiosk.service
+    info "Kiosk-Dienst einrichten"
 
-# Die Textkonsole darf tty1 nicht belegen, sonst kämpft sie mit cage darum
-systemctl disable getty@tty1.service >/dev/null 2>&1 || true
+    # Zugriff auf Grafik und Eingabegeräte
+    usermod -aG video,render,input,tty "$TARGET_USER"
 
-systemctl daemon-reload
-systemctl enable smartmirror-kiosk >/dev/null 2>&1
-ok "Dienst installiert (Drehung: $ROTATION Grad)"
+    # Ohne linger gibt es kein /run/user/UID und cage startet nicht
+    loginctl enable-linger "$TARGET_USER" >/dev/null 2>&1 || true
+    systemctl enable --now seatd >/dev/null 2>&1 || true
+
+    sed -e "s|__USER__|${TARGET_USER}|g" \
+        -e "s|__UID__|${TARGET_UID}|g" \
+        -e "s|__CHROMIUM__|${CHROMIUM}|g" \
+        -e "s|__ROTATION__|${ROTATION}|g" \
+        "$PROJECT_DIR/deploy/smartmirror-kiosk.service" \
+        > /etc/systemd/system/smartmirror-kiosk.service
+
+    # Die Textkonsole darf tty1 nicht belegen, sonst kämpft sie mit cage darum
+    systemctl disable getty@tty1.service >/dev/null 2>&1 || true
+
+    systemctl daemon-reload
+    systemctl enable smartmirror-kiosk >/dev/null 2>&1
+    ok "Dienst installiert (Drehung: $ROTATION Grad)"
+
+fi
 
 # --- 7. SD-Karte schonen ---------------------------------------------------
 
@@ -234,13 +283,26 @@ cat <<EOF
         http://mirror.local/          Anzeige
         http://mirror.local/admin/    Verwaltung
 
-    Jetzt neu starten, damit tmpfs und der Kiosk-Modus greifen:
+    Jetzt neu starten, damit tmpfs und zram greifen:
 
         sudo reboot
 
-    Danach prüfen:
+EOF
+
+if [[ "$KIOSK" == "no" ]]; then
+cat <<EOF
+    Die Anzeige auf dem angeschlossenen Display ist noch offen.
+    Welcher Browser auf dieser Hardware läuft, zeigt:
+
+        deploy/probe.sh
+
+EOF
+else
+cat <<EOF
+    Nach dem Neustart zeigt das Display den Spiegel. Prüfen mit:
 
         systemctl status smartmirror-kiosk
         free -h
 
 EOF
+fi
