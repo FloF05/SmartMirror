@@ -136,7 +136,7 @@ unit_installed "$PHP_SERVICE" \
     || fail "Dienst ${PHP_SERVICE} nicht gefunden. Ist php-fpm installiert?"
 
 systemctl enable --now "$PHP_SERVICE" >/dev/null 2>&1 || true
-ok "PHP $PHP_VERSION über $PHP_SOCKET"
+ok "PHP $PHP_VERSION erkannt, Socket: $PHP_SOCKET"
 
 # --- 3. Verzeichnisse und Rechte -------------------------------------------
 
@@ -258,13 +258,40 @@ if unit_installed dphys-swapfile; then
     ok "Swap auf der SD-Karte deaktiviert"
 fi
 
-cat > /etc/default/zramswap <<'ZRAM'
-ALGO=zstd
+# Nicht jeder Kernel bringt jeden Kompressor mit - auf ARMv6 fehlt zstd
+# regelmäßig. Steht in /etc/default/zramswap ein Verfahren, das der Kernel
+# nicht kann, startet zramswap.service gar nicht erst.
+modprobe zram >/dev/null 2>&1 || true
+
+ZRAM_ALGO=""
+
+if [[ -r /sys/block/zram0/comp_algorithm ]]; then
+    for algo in zstd lz4 lzo-rle lzo; do
+        if grep -qw "$algo" /sys/block/zram0/comp_algorithm; then
+            ZRAM_ALGO="$algo"
+            break
+        fi
+    done
+fi
+
+ZRAM_ALGO="${ZRAM_ALGO:-lzo}"
+
+cat > /etc/default/zramswap <<ZRAM
+ALGO=${ZRAM_ALGO}
 PERCENT=50
 PRIORITY=100
 ZRAM
-systemctl enable --now zramswap >/dev/null 2>&1 || systemctl restart zramswap || true
-ok "zram als Swap aktiv"
+
+systemctl enable zramswap >/dev/null 2>&1 || true
+
+if systemctl restart zramswap >/dev/null 2>&1; then
+    ok "zram als Swap aktiv (Verfahren: $ZRAM_ALGO)"
+else
+    warn "zramswap startet nicht. Der Spiegel läuft trotzdem -"
+    warn "die SD-Karte wird nur weniger geschont. Ursache zeigt:"
+    warn "    systemctl status zramswap"
+    warn "    journalctl -xeu zramswap.service"
+fi
 
 # Logs in den RAM. Zusammen mit 'access_log off' in der Nginx-Konfiguration
 # schreibt der Spiegel im Normalbetrieb praktisch nichts mehr auf die Karte.
@@ -295,6 +322,52 @@ for cmdline in /boot/firmware/cmdline.txt /boot/cmdline.txt; do
         break
     fi
 done
+
+# --- Abschluss -------------------------------------------------------------
+
+# --- Funktionstest ---------------------------------------------------------
+
+info "Funktionstest"
+
+# Kurz warten, PHP-FPM braucht nach dem Neustart einen Moment für den Socket.
+sleep 3
+
+http_code() {
+    curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$1" 2>/dev/null || echo 000
+}
+
+SETUP_OK=yes
+
+CODE="$(http_code http://localhost/)"
+if [[ "$CODE" == "200" ]]; then
+    ok "Spiegelseite antwortet"
+else
+    SETUP_OK=no
+    warn "Spiegelseite antwortet nicht (HTTP $CODE)"
+    warn "    systemctl status nginx $PHP_SERVICE"
+fi
+
+CODE="$(http_code http://localhost/admin/)"
+if [[ "$CODE" == "200" ]]; then
+    ok "Adminbereich antwortet"
+else
+    SETUP_OK=no
+    warn "Adminbereich antwortet nicht (HTTP $CODE)"
+fi
+
+# Beweist in einem Rutsch: PHP läuft, die curl-Erweiterung ist da und der
+# API-Key wird akzeptiert.
+WEATHER="$(curl -s --max-time 20 http://localhost/api/weather.php 2>/dev/null || true)"
+
+if [[ "$WEATHER" == *'"temp"'* ]]; then
+    ok "Wetterdaten werden abgerufen"
+elif [[ "$WEATHER" == *"401"* || "$WEATHER" == *"Invalid API key"* ]]; then
+    warn "OpenWeather lehnt den Key ab. Frisch erstellte Keys brauchen"
+    warn "bis zu zwei Stunden, bis sie funktionieren."
+else
+    warn "Wetterabruf ohne Ergebnis. Antwort war:"
+    warn "    ${WEATHER:0:160}"
+fi
 
 # --- Fertig ----------------------------------------------------------------
 
