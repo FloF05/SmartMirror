@@ -1,48 +1,30 @@
-const slideshowImages =
-document.querySelectorAll(".slideshow-image");
+(() => {
 
+    const config = (window.mirrorConfig && window.mirrorConfig.slideshow) || {};
+    const interval = parseInt(config.interval, 10) || 5000;
 
-let currentImage = 0;
+    const images = document.querySelectorAll(".slideshow-image");
 
+    if (images.length === 0) {
+        return;
+    }
 
-function showImage(index)
-{
+    let current = 0;
 
-    slideshowImages.forEach(
-        image =>
-        image.classList.remove("active")
-    );
+    const showImage = index => {
+        images.forEach(image => image.classList.remove("active"));
+        images[index].classList.add("active");
+    };
 
+    showImage(current);
 
-    slideshowImages[index]
-    .classList.add("active");
+    if (images.length < 2) {
+        return;
+    }
 
-}
+    setInterval(() => {
+        current = (current + 1) % images.length;
+        showImage(current);
+    }, interval);
 
-
-if(slideshowImages.length > 0)
-{
-
-    showImage(currentImage);
-
-
-    setInterval(() =>
-    {
-
-        currentImage++;
-
-
-        if(
-            currentImage
-            >= slideshowImages.length
-        )
-        {
-            currentImage = 0;
-        }
-
-
-        showImage(currentImage);
-
-    }, slideshowInterval);
-
-}
+})();

@@ -1,0 +1,59 @@
+# Startet den SmartMirror im Vollbild auf dem angeschlossenen Display.
+#
+# cage ist ein minimaler Wayland-Compositor: er zeigt genau eine Anwendung
+# im Vollbild - kein Desktop, keine Leisten, kein Mauszeiger.
+#
+# Vorlage: die Platzhalter setzt deploy/setup.sh automatisch ein.
+
+[Unit]
+Description=SmartMirror Kiosk (cage + Chromium)
+After=network-online.target nginx.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+User=__USER__
+Group=__USER__
+
+Environment=XDG_RUNTIME_DIR=/run/user/__UID__
+
+# Ohne das bricht cage ab, wenn weder Maus noch Tastatur angeschlossen sind -
+# beim Spiegel also im Normalbetrieb.
+Environment=WLR_LIBINPUT_NO_DEVICES=1
+
+# Display-Drehung für das Hochformat-Panel.
+# Steht das Bild auf dem Kopf, hier auf 270 wechseln:
+#     sudo systemctl edit --full smartmirror-kiosk
+# Bei einem normalen Querformat-Display die Zeile auskommentieren.
+Environment=WLR_OUTPUT_TRANSFORM=__ROTATION__
+
+# Erst starten, wenn der Webserver wirklich antwortet - sonst zeigt
+# Chromium beim Booten eine Fehlerseite und bleibt dabei stehen.
+ExecStartPre=/bin/sh -c 'until curl -sf -o /dev/null http://localhost/; do sleep 2; done'
+
+ExecStart=/usr/bin/cage -d -- __CHROMIUM__ \
+    --kiosk \
+    --noerrdialogs \
+    --disable-infobars \
+    --disable-session-crashed-bubble \
+    --disable-features=Translate,TranslateUI \
+    --no-first-run \
+    --check-for-update-interval=31536000 \
+    --autoplay-policy=no-user-gesture-required \
+    --overscroll-history-navigation=0 \
+    --disable-pinch \
+    http://localhost/
+
+Restart=always
+RestartSec=5
+
+TTYPath=/dev/tty1
+StandardInput=tty
+StandardOutput=journal
+StandardError=journal
+TTYReset=yes
+TTYVHangup=yes
+
+[Install]
+WantedBy=multi-user.target

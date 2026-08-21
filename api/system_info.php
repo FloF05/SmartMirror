@@ -50,7 +50,9 @@ function getCpu(): string {
 }
 
 function getHostnameValue(): string {
-    return trim(shell_exec('hostname')) ?: 'unbekannt';
+    // php_uname statt shell_exec: startet keinen Prozess und funktioniert
+    // auch dort, wo shell_exec per Konfiguration gesperrt ist.
+    return php_uname('n') ?: 'unbekannt';
 }
 
 echo json_encode([

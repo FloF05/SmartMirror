@@ -1,102 +1,76 @@
 <?php
 
-require "config/config.php";
+require __DIR__ . "/app/settings.php";
+require __DIR__ . "/app/module_loader.php";
+require __DIR__ . "/app/css_loader.php";
+require __DIR__ . "/app/js_loader.php";
 
-require "app/module_loader.php";
-require "app/css_loader.php";
-require "app/js_loader.php";
+$settings = loadSettings();
+$modules  = $settings["modules"];
 
-$reloadRequested = isset($_GET['reload']) && $_GET['reload'] === '1';
-$refreshStateFile = __DIR__ . '/uploads/refresh_state.json';
-$refreshVersion = 0;
+// Die Version, mit der diese Seite gerendert wurde. Meldet die API später
+// eine höhere, hat jemand im Adminbereich etwas geändert -> neu laden.
+$renderedRefreshVersion = refreshVersion();
 
-if (file_exists($refreshStateFile)) {
-    $decodedRefresh = json_decode(file_get_contents($refreshStateFile), true);
-    if (is_array($decodedRefresh)) {
-        $refreshVersion = (int) ($decodedRefresh['version'] ?? 0);
-    }
+$mirrorClasses = "mirror";
+
+if (in_array("clock", $modules, true)) {
+    $mirrorClasses .= " has-clock";
 }
+
 ?>
-
-
 <!DOCTYPE html>
-
 <html lang="de">
-
 
 <head>
 
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>
-<?= $config["name"] ?>
-</title>
+<title><?= htmlspecialchars($settings["name"]) ?></title>
 
-
-<link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/layout.css">
 
-<?php loadModuleCSS($config["modules"]); ?>
-
+<?php loadModuleCSS($modules); ?>
 
 </head>
 
-
 <body>
 
+<div class="<?= $mirrorClasses ?>">
 
-<div class="mirror">
-
-
-<?php
-
-
-foreach($config["modules"] as $module)
-{
-
-    loadModule($module);
-
-}
-
-
-?>
-
+<?php foreach ($modules as $module) {
+    loadModule($module, $settings);
+} ?>
 
 </div>
 
-
-<?php loadModuleJS($config["modules"]); ?>
+<?php loadModuleJS($modules, $settings); ?>
 
 <script>
-    const refreshKey = 'smartmirror_refresh_version';
-    let currentVersion = parseInt(localStorage.getItem(refreshKey) || '0', 10);
+    const renderedVersion = <?= $renderedRefreshVersion ?>;
 
     const checkRefresh = async () => {
         try {
-            const response = await fetch('api/refresh_state.php');
+            const response = await fetch('api/refresh_state.php', { cache: 'no-store' });
+
             if (!response.ok) {
                 return;
             }
 
             const data = await response.json();
-            const serverVersion = parseInt(data.version || '0', 10);
 
-            if (serverVersion > currentVersion) {
-                currentVersion = serverVersion;
-                localStorage.setItem(refreshKey, String(currentVersion));
+            if (parseInt(data.version, 10) > renderedVersion) {
                 window.location.reload();
             }
         } catch (error) {
-            console.log('Refresh check failed', error);
+            // Netzwerkaussetzer sind hier belanglos - der nächste Poll fängt es auf.
         }
     };
 
-    checkRefresh();
-    setInterval(checkRefresh, 2000);
+    setInterval(checkRefresh, 10000);
 </script>
 
-
 </body>
-
 
 </html>

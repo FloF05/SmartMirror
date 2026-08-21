@@ -1,41 +1,11 @@
-function updateClock()
-{
+(() => {
 
-    const now = new Date();
+    const config = (window.mirrorConfig && window.mirrorConfig.clock) || {};
 
+    const showSeconds = config.show_seconds !== false;
+    const use12Hour = String(config.format) === "12";
 
-    let hours =
-    now.getHours()
-    .toString()
-    .padStart(2,'0');
-
-
-    let minutes =
-    now.getMinutes()
-    .toString()
-    .padStart(2,'0');
-
-
-    let seconds =
-    now.getSeconds()
-    .toString()
-    .padStart(2,'0');
-
-
-    let time =
-    hours + ":" + minutes;
-
-
-    time += ":" + seconds;
-
-
-    document.getElementById("clock-time")
-    .innerHTML = time;
-
-
-
-    let days = [
-
+    const days = [
         "Sonntag",
         "Montag",
         "Dienstag",
@@ -43,12 +13,9 @@ function updateClock()
         "Donnerstag",
         "Freitag",
         "Samstag"
-
     ];
 
-
-    let months = [
-
+    const months = [
         "Januar",
         "Februar",
         "März",
@@ -61,63 +28,66 @@ function updateClock()
         "Oktober",
         "November",
         "Dezember"
-
     ];
 
+    const pad = value => String(value).padStart(2, "0");
 
+    const greetingFor = hour => {
+        if (hour >= 5 && hour < 12) return "Guten Morgen";
+        if (hour >= 12 && hour < 18) return "Guten Tag";
+        if (hour >= 18 && hour < 22) return "Guten Abend";
+        return "Gute Nacht";
+    };
 
-    let date =
-    days[now.getDay()]
-    + ", "
-    + now.getDate()
-    + ". "
-    + months[now.getMonth()]
-    + " "
-    + now.getFullYear();
+    const formatTime = now => {
+        const hours = now.getHours();
 
+        let text = use12Hour
+            ? pad(hours % 12 === 0 ? 12 : hours % 12)
+            : pad(hours);
 
+        text += ":" + pad(now.getMinutes());
 
-    document.getElementById("clock-date")
-    .innerHTML = date;
+        if (showSeconds) {
+            text += ":" + pad(now.getSeconds());
+        }
 
+        if (use12Hour) {
+            text += hours < 12 ? " AM" : " PM";
+        }
 
+        return text;
+    };
 
-    let hour = now.getHours();
+    const timeElement = document.getElementById("clock-time");
+    const dateElement = document.getElementById("clock-date");
+    const greetingElement = document.getElementById("clock-greeting");
 
-    let greeting;
-
-
-
-    if(hour >= 5 && hour < 12)
-    {
-        greeting="Guten Morgen";
+    if (!timeElement || !dateElement || !greetingElement) {
+        return;
     }
 
-    else if(hour >= 12 && hour < 18)
-    {
-        greeting="Guten Tag";
-    }
+    const updateClock = () => {
+        const now = new Date();
 
-    else if(hour >=18 && hour <22)
-    {
-        greeting="Guten Abend";
-    }
+        timeElement.textContent = formatTime(now);
 
-    else
-    {
-        greeting="Gute Nacht";
-    }
+        dateElement.textContent =
+            days[now.getDay()]
+            + ", "
+            + now.getDate()
+            + ". "
+            + months[now.getMonth()]
+            + " "
+            + now.getFullYear();
 
+        greetingElement.textContent = greetingFor(now.getHours());
+    };
 
+    updateClock();
 
-    document.getElementById("clock-greeting")
-    .innerHTML=greeting;
+    // Ohne Sekundenanzeige reicht ein Takt von 10 Sekunden - das spart
+    // dem Pi Zero jede Menge unnötiger Aufrufe.
+    setInterval(updateClock, showSeconds ? 1000 : 10000);
 
-
-}
-
-
-
-setInterval(updateClock,1000);
-
-updateClock();
+})();

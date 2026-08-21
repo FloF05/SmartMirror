@@ -1,88 +1,53 @@
 <?php
-require_once __DIR__ . "/../../config/config.php";
 
-$uploadDirectory = __DIR__ . "/../../uploads/";
+// $settings kommt aus loadModule() in app/module_loader.php
 
 $images = [];
 
-$allowedExtensions = [
-    "jpg",
-    "jpeg",
-    "png",
-    "webp"
-];
+$allowedExtensions = ["jpg", "jpeg", "png", "webp"];
 
+if (is_dir(uploadsDirectory())) {
 
-if(is_dir($uploadDirectory))
-{
+    foreach (scandir(uploadsDirectory()) as $file) {
 
-    $files = scandir($uploadDirectory);
-
-
-    foreach($files as $file)
-    {
-
-        $filePath = $uploadDirectory . $file;
-
-
-        if(!is_file($filePath))
-        {
+        if (!is_file(uploadsDirectory() . "/" . $file)) {
             continue;
         }
 
+        $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 
-        $extension =
-        strtolower(
-            pathinfo($file, PATHINFO_EXTENSION)
-        );
-
-
-        if(
-            in_array(
-                $extension,
-                $allowedExtensions
-            )
-        )
-        {
+        if (in_array($extension, $allowedExtensions, true)) {
             $images[] = $file;
         }
-
     }
-
 }
-
 
 shuffle($images);
 
-
 ?>
-
 
 <div class="slideshow-module">
 
-    <?php if(count($images) > 0): ?>
+    <?php if ($images !== []): ?>
 
         <div id="slideshow">
 
-            <?php foreach($images as $image): ?>
+            <?php foreach ($images as $image): ?>
 
                 <img
-                    src="uploads/<?= htmlspecialchars($image) ?>"
+                    src="uploads/<?= rawurlencode($image) ?>"
                     class="slideshow-image"
-                    alt="Slideshow Bild"
+                    alt=""
                 >
 
             <?php endforeach; ?>
 
         </div>
 
-
     <?php else: ?>
 
         <div class="slideshow-empty">
-
             Keine Bilder vorhanden.
-
         </div>
 
     <?php endif; ?>

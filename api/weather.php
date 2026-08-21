@@ -1,118 +1,99 @@
 <?php
 
+require __DIR__ . "/../app/settings.php";
+
 header("Content-Type: application/json");
 
-require_once __DIR__ . "/../config/config.php";
+$settings = loadSettings();
 
-$secrets = require __DIR__ . "/../config/secrets.php";
+$secretsFile = mirrorRoot() . "/config/secrets.php";
 
-
-$cacheFile =
-    __DIR__ . "/../cache/weather.json";
-
-
-$cacheDuration = 600;
-
-
-if (
-    file_exists($cacheFile)
-    &&
-    (time() - filemtime($cacheFile))
-    < $cacheDuration
-) {
-
-    echo file_get_contents($cacheFile);
-
+if (!is_file($secretsFile)) {
+    http_response_code(500);
+    echo json_encode([
+        "error" => "config/secrets.php fehlt - siehe config/secrets.example.php"
+    ]);
     exit;
-
 }
 
+$secrets = require $secretsFile;
+$apiKey  = $secrets["openweather_key"] ?? "";
 
-$city =
-    $config["weather"]["city"];
+if ($apiKey === "" || str_starts_with($apiKey, "HIER_DEN_")) {
+    http_response_code(500);
+    echo json_encode([
+        "error" => "Kein OpenWeather-API-Key hinterlegt."
+    ]);
+    exit;
+}
 
-$country =
-    $config["weather"]["country"];
+if (!function_exists("curl_init")) {
+    http_response_code(500);
+    echo json_encode([
+        "error" => "PHP-Erweiterung curl fehlt - 'sudo apt install php-curl' ausführen."
+    ]);
+    exit;
+}
 
-$units =
-    $config["weather"]["units"];
+$cacheFile     = weatherCacheFile();
+$cacheDuration = 600;
 
-$apiKey =
-    $secrets["openweather_key"];
+if (
+    is_file($cacheFile)
+    && (time() - filemtime($cacheFile)) < $cacheDuration
+) {
+    echo file_get_contents($cacheFile);
+    exit;
+}
 
+$city    = $settings["weather"]["city"];
+$country = $settings["weather"]["country"];
+$units   = $settings["weather"]["units"];
+
+$query = $country !== ""
+    ? $city . "," . $country
+    : $city;
 
 $url =
     "https://api.openweathermap.org/data/2.5/weather"
-    . "?q=" . urlencode($city . "," . $country)
+    . "?q=" . urlencode($query)
     . "&appid=" . urlencode($apiKey)
     . "&units=" . urlencode($units)
     . "&lang=de";
 
+$ch = curl_init($url);
 
-$ch =
-    curl_init($url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_TIMEOUT, 10);
 
-
-curl_setopt(
-    $ch,
-    CURLOPT_RETURNTRANSFER,
-    true
-);
-
-curl_setopt(
-    $ch,
-    CURLOPT_TIMEOUT,
-    10
-);
-
-
-$response =
-    curl_exec($ch);
-
-
-if ($response === false) {
-
-    http_response_code(500);
-
-    echo json_encode([
-
-        "error" =>
-        "Wetterdaten konnten nicht abgerufen werden."
-
-    ]);
-
-    curl_close($ch);
-
-    exit;
-
-}
-
-
-$httpCode =
-    curl_getinfo(
-        $ch,
-        CURLINFO_HTTP_CODE
-    );
-
+$response = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
 curl_close($ch);
 
+if ($response === false) {
 
-if ($httpCode !== 200) {
+    // Lieber veraltete Wetterdaten zeigen als gar keine - der Pi hängt
+    // im WLAN und verliert die Verbindung gelegentlich.
+    if (is_file($cacheFile)) {
+        echo file_get_contents($cacheFile);
+        exit;
+    }
 
-    http_response_code($httpCode);
-
-    echo $response;
-
+    http_response_code(500);
+    echo json_encode([
+        "error" => "Wetterdaten konnten nicht abgerufen werden."
+    ]);
     exit;
-
 }
 
+if ($httpCode !== 200) {
+    http_response_code($httpCode);
+    echo $response;
+    exit;
+}
 
-file_put_contents(
-    $cacheFile,
-    $response
-);
-
+ensureDirectory(dirname($cacheFile));
+file_put_contents($cacheFile, $response, LOCK_EX);
 
 echo $response;

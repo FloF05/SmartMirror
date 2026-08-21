@@ -68,6 +68,11 @@
     opacity: 0.9;
 }
 
+.calendar-event--more {
+    opacity: 0.6;
+    font-style: italic;
+}
+
 .calendar-empty {
     font-size: 0.9rem;
     opacity: 0.7;

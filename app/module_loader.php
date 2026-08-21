@@ -1,22 +1,10 @@
 <?php
 
-
-function loadModule($module)
+function loadModule(string $module, array $settings): void
 {
+    $file = mirrorRoot() . "/modules/" . $module . "/" . $module . ".php";
 
-
-    $file = __DIR__ . "/../modules/" . $module . "/" . $module . ".php";
-
-
-    if(file_exists($file))
-    {
-
+    if (is_file($file)) {
         include $file;
-
     }
-
-
 }
-
-
-?>

@@ -1,14 +1,14 @@
-# Logs
-logs/
-
-# Uploads
-# uploads/
-
-# Datenbank
-database/*.db
-
 # Konfiguration mit geheimen Daten
 config/secrets.php
+
+# Laufzeitdaten (werden vom Webserver geschrieben)
+data/
+uploads/
+cache/
+logs/
+
+# Datenbank
+database/
 
 # Temporäre Dateien
 *.tmp
@@ -20,8 +20,4 @@ config/secrets.php
 
 # System
 .DS_Store
-
-
-config/secrets.php
-
-cache/
+Thumbs.db

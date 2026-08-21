@@ -1,17 +1,20 @@
 # SmartMirror Projekt Status
 
+Stand: August 2026
+
 ## Allgemeine Informationen
 
 **Projekt:**
 SmartMirror
 
 **Ziel:**
-Entwicklung eines webbasierten Smart Mirrors auf einem Raspberry Pi Zero 2 W mit einer modularen Architektur.
+Entwicklung eines webbasierten Smart Mirrors auf einem Raspberry Pi Zero 2 W
+mit einer modularen Architektur.
 
 ### Hardware
 
 * Raspberry Pi Zero 2 W
-* Display mit HDMI-Controller
+* Display mit HDMI-Controller, Hochformat
 * Raspberry Pi OS Lite (64 Bit)
 
 ### Raspberry Pi
@@ -19,7 +22,7 @@ Entwicklung eines webbasierten Smart Mirrors auf einem Raspberry Pi Zero 2 W mit
 **Hostname:**
 mirror
 
-**Aktueller Benutzer:**
+**Benutzer:**
 mirror
 
 **Projektpfad:**
@@ -28,129 +31,44 @@ mirror
 /home/mirror/Projects/SmartMirror
 ```
 
-### Benutzer- und Rechtekonzept
-
-Das Projekt wurde erfolgreich vom Benutzer `root` auf den normalen Benutzer `mirror` migriert.
-
-Erledigt:
-
-* [x] Projekt von `/root/Projects/SmartMirror` nach `/home/mirror/Projects/SmartMirror` verschoben
-* [x] Besitzer der Projektdateien auf `mirror` geändert
-* [x] Nginx auf den neuen Projektpfad angepasst
-* [x] Zugriffsrechte für Nginx korrigiert
-* [x] Schreibrechte für den PHP-FPM-Benutzer `www-data` auf den Cache-Ordner eingerichtet
-* [x] Schreib- und Löschrechte für `www-data` auf den Upload-Ordner eingerichtet
-
-Der aktuelle Aufbau ist damit:
-
-```text
-mirror
-└── /home/mirror/Projects/SmartMirror
-```
-
-Nginx und PHP-FPM können auf die benötigten Projektdateien zugreifen.
-
-Der Cache-Ordner ist für PHP-FPM beschreibbar:
-
-```text
-cache/
-└── weather.json
-```
-
-Der Upload-Ordner ist für PHP-FPM beschreibbar:
-
-```text
-uploads/
-└── Bilddateien
-```
-
 ---
 
 # Entwicklungsumgebung
 
 ## Hauptentwicklungsrechner
 
-Windows-PC
-
-**Editor:**
-
-* Visual Studio Code
+Windows-PC mit Visual Studio Code
 
 ## Workflow
 
-Entwicklung:
-
 ```text
-VS Code
-    │
-    ▼
-Git Commit
-    │
-    ▼
-Git Push
-    │
-    ▼
-GitHub
+VS Code  ->  git commit  ->  git push  ->  GitHub
+                                            |
+                                            v
+                                   deploy/update.sh
+                                            |
+                                            v
+                                     Raspberry Pi
 ```
 
-Deployment auf den Raspberry Pi:
-
-```text
-GitHub
-    │
-    ▼
-git pull
-    │
-    ▼
-Raspberry Pi
-```
-
-GitHub dient gleichzeitig als:
-
-* Remote Repository
-* Versionsverwaltung
-* Backup der Codebasis
-
----
-
-# Git Status
+GitHub dient gleichzeitig als Remote Repository, Versionsverwaltung und
+Backup der Codebasis.
 
 **Repository:**
 
 ```text
-git@github.com:FloF05/SmartMirror.git
+https://github.com/FloF05/SmartMirror.git
 ```
 
-**Branch:**
-
-```text
-main
-```
-
-**Verbindung:**
-
-SSH eingerichtet
-
-### Status
-
-* [x] GitHub Repository erstellt
-* [x] SSH-Verbindung eingerichtet
-* [x] SSH-Key für den Benutzer `mirror` eingerichtet
-* [x] Push funktioniert
-* [x] Pull funktioniert
-* [x] Entwicklung erfolgt über VS Code
-* [x] Deployment auf den Raspberry Pi über `git pull`
+**Branch:** main
 
 ---
 
 # Aktueller Entwicklungsstand
 
-## Kapitel 1 – Raspberry Pi Einrichtung
+## Kapitel 1 - Raspberry Pi Einrichtung
 
-**Status:**
-✅ Abgeschlossen
-
-### Erledigt
+**Status:** Abgeschlossen
 
 * [x] Raspberry Pi OS Lite installiert
 * [x] WLAN eingerichtet
@@ -158,60 +76,173 @@ SSH eingerichtet
 * [x] System aktualisiert
 * [x] Grundpakete installiert
 
----
+## Kapitel 2 - Webserver
 
-## Kapitel 2 – Webserver
-
-**Status:**
-✅ Abgeschlossen
-
-### Erledigt
+**Status:** Abgeschlossen
 
 * [x] Nginx installiert
-* [x] PHP installiert
 * [x] PHP-FPM eingerichtet
-* [x] SQLite vorbereitet
 * [x] Eigene Webseite erreichbar
 * [x] Nginx auf den Projektpfad konfiguriert
 
-### Aktueller Nginx Root-Pfad
+Die Nginx-Konfiguration liegt jetzt als Vorlage im Repository unter
+`deploy/nginx-smartmirror.conf`. Die PHP-Version wird beim Einrichten
+automatisch erkannt, der Socket-Pfad also nicht mehr von Hand eingetragen.
+
+## Kapitel 3 - Modulare Architektur
+
+**Status:** Abgeschlossen
+
+* [x] Modul-Lader erstellt
+* [x] Konfigurationsdatei erstellt
+* [x] Separate Secrets-Datei eingerichtet
+* [x] Alle fünf Module umgesetzt
+
+## Kapitel 4 - Smart Mirror Layout
+
+**Status:** Abgeschlossen
+
+* [x] CSS Grid Layout erstellt
+* [x] Vollbildansicht umgesetzt
+* [x] Hochformat-Anpassung berücksichtigt
+
+Das Layout arbeitet ohne fest benannte Bereiche, damit sich einzelne Module
+abschalten lassen, ohne dass eine Lücke im Raster entsteht. Die Uhr steht
+über der vollen Breite, alle übrigen Module teilen sich zwei Spalten.
+Bleibt ein Modul allein übrig, füllt es die ganze Zeile.
+
+## Kapitel 5 - Uhr- und Datumsmodul
+
+**Status:** Abgeschlossen
+
+* [x] Digitale Uhr
+* [x] Deutscher Wochentag und deutsches Datumsformat
+* [x] Begrüßung abhängig von der Tageszeit
+* [x] Sekundenanzeige über den Adminbereich schaltbar
+* [x] 12- und 24-Stunden-Format über den Adminbereich wählbar
+
+## Kapitel 6 - Wettermodul
+
+**Status:** Abgeschlossen
+
+* [x] OpenWeather API angebunden
+* [x] API-Key getrennt in config/secrets.php, nicht in Git
+* [x] Cache mit 10 Minuten Laufzeit in cache/weather.json
+* [x] Standort über den Adminbereich änderbar
+
+Bei einem Standortwechsel wird der Cache verworfen, damit die neue Stadt
+sofort erscheint. Fällt das WLAN aus, zeigt der Spiegel die letzten
+bekannten Werte weiter, statt leer zu bleiben.
+
+## Kapitel 7 - Slideshow und Bildverwaltung
+
+**Status:** Abgeschlossen
+
+* [x] Bilder aus uploads/, zufällige Reihenfolge
+* [x] JPG, JPEG, PNG und WebP
+* [x] Weicher Übergang, Intervall im Adminbereich einstellbar
+* [x] Upload und Löschen über den Adminbereich
+
+## Kapitel 8 - Kalender und Systeminfo
+
+**Status:** Abgeschlossen
+
+* [x] Kalendermodul mit Monats- und Wochenansicht
+* [x] ICS-Import über den Adminbereich
+* [x] Importierten Kalender wieder entfernbar
+* [x] Systeminfo-Modul mit Host, CPU-Last, RAM und Uptime
+
+Der ICS-Parser setzt umgebrochene Zeilen nach RFC 5545 wieder zusammen und
+löst Escape-Sequenzen auf. Ohne das reißen Exporte aus Google oder Apple
+Kalender mitten im Termintitel ab. Ganztägige und terminierte Ereignisse
+werden unterschieden, Uhrzeiten in UTC in die lokale Zeitzone umgerechnet.
+
+## Kapitel 9 - Adminbereich, Kiosk-Modus und Deployment
+
+**Status:** Abgeschlossen
+
+### Zentrale Einstellungsverwaltung
+
+Alle Einstellungen laufen über `app/settings.php`:
 
 ```text
-/home/mirror/Projects/SmartMirror
+config/config.php     Standardwerte, liegen in Git
+        |
+        v
+data/settings.json    im Adminbereich gesetzte Werte, nur lokal
+        |
+        v
+loadSettings()        was der Spiegel tatsächlich verwendet
 ```
 
-### PHP-FPM
+Geschrieben wird ausschließlich über `saveSettings()`. Die Funktion verwirft
+dabei den Wetter-Cache und zählt die Refresh-Version hoch.
 
-PHP wird über PHP-FPM ausgeführt.
+### Im Adminbereich einstellbar
 
-Der verwendete Socket ist:
+* [x] Module einzeln an- und abschalten
+* [x] Uhrformat und Sekundenanzeige
+* [x] Wetter-Standort
+* [x] Bildwechsel-Intervall der Diashow
+* [x] Kalenderansicht und ICS-Import
+* [x] Bilder hochladen und löschen
+
+### Automatisches Neuladen
+
+Jede Änderung im Adminbereich zählt eine Versionsnummer in
+`data/refresh_state.json` hoch. Der Spiegel fragt sie alle zehn Sekunden ab
+und lädt sich bei einer höheren Nummer selbst neu. Niemand muss ans Display.
+
+### Kiosk-Modus
+
+* [x] cage als minimaler Wayland-Compositor
+* [x] Chromium im Vollbild ohne Desktop und ohne Mauszeiger
+* [x] Start über systemd beim Booten
+* [x] Wartet, bis der Webserver antwortet
+* [x] Startet nach einem Absturz automatisch neu
+* [x] Display-Drehung über eine Zeile im Dienst einstellbar
+
+### Deployment
 
 ```text
-/run/php/php8.4-fpm.sock
+deploy/
+├── setup.sh                    richtet einen frischen Pi komplett ein
+├── update.sh                   holt Änderungen und lädt den Spiegel neu
+├── nginx-smartmirror.conf      Nginx-Vorlage
+└── smartmirror-kiosk.service   systemd-Dienst für den Kiosk
 ```
+
+`setup.sh` ist mehrfach ausführbar und ändert nur, was noch nicht stimmt.
+
+### Dauerbetrieb
+
+* [x] Swap von der SD-Karte auf zram verlegt
+* [x] /var/log und /tmp als tmpfs im RAM
+* [x] Nginx-Zugriffslog abgeschaltet
+* [x] Bildschirmabschaltung verhindert (consoleblank=0)
+
+Swap auf der SD-Karte ist der schnellste Weg, sie kaputtzuschreiben.
+Komplett abschalten wäre bei 512 MB RAM allerdings riskant, weil der Kernel
+dann anfängt, Chromium abzuschießen. Deshalb zram: komprimierter Swap im
+Arbeitsspeicher.
 
 ---
 
-## Kapitel 3 – Modulare Architektur
-
-**Status:**
-✅ Abgeschlossen
-
-### Umgesetzt
-
-Projektstruktur:
+# Projektstruktur
 
 ```text
 SmartMirror/
 │
 ├── app/
+│   ├── settings.php        Einstellungen laden und speichern
 │   ├── module_loader.php
 │   ├── css_loader.php
 │   └── js_loader.php
 │
 ├── config/
-│   ├── config.php
-│   └── secrets.php
+│   ├── config.php          Standardwerte
+│   ├── secrets.example.php Vorlage
+│   └── secrets.php         API-Key, nicht in Git
 │
 ├── modules/
 │   ├── clock/
@@ -221,459 +252,90 @@ SmartMirror/
 │   └── info/
 │
 ├── api/
-│   └── weather.php
-│
-├── cache/
-│   └── weather.json
+│   ├── weather.php
+│   ├── calendar.php
+│   ├── system_info.php
+│   └── refresh_state.php
 │
 ├── admin/
 │   ├── index.php
+│   ├── save_settings.php
 │   ├── upload.php
 │   ├── delete.php
 │   └── style.css
 │
+├── deploy/
 ├── css/
-├── js/
-├── uploads/
-├── database/
-├── logs/
-└── index.php
-```
-
-### Erledigt
-
-* [x] Modul-Lader erstellt
-* [x] Konfigurationsdatei erstellt
-* [x] Separate Secrets-Datei eingerichtet
-* [x] Clock-Modul eingerichtet
-* [x] Weather-Modul eingerichtet
-* [x] Slideshow-Modul eingerichtet
-* [x] Weitere Module vorbereitet
-* [x] Adminbereich für die Bildverwaltung erstellt
-
----
-
-## Kapitel 4 – Smart Mirror Layout
-
-**Status:**
-✅ Abgeschlossen
-
-### Umgesetzt
-
-* [x] CSS Grid Layout erstellt
-* [x] Vollbildansicht umgesetzt
-* [x] Bereiche für alle Module definiert
-* [x] Platzhalter für Wetter, Kalender, Diashow und Informationen erstellt
-* [x] Dashboard-Struktur vorbereitet
-* [x] Layout für das verwendete Display getestet
-* [x] Hochformat-Anpassung berücksichtigt
-
-### Aktuelles Layout
-
-```text
-┌─────────────────────────────────────────────┐
-│                  Uhr & Datum                │
-├──────────────────────┬──────────────────────┤
-│ Wetter               │ Diashow              │
-│                      │                      │
-├──────────────────────┼──────────────────────┤
-│ Kalender             │ Systeminformationen   │
-│                      │                      │
-└──────────────────────┴──────────────────────┘
-```
-
----
-
-## Kapitel 5 – Uhr- und Datumsmodul
-
-**Status:**
-✅ Abgeschlossen
-
-### Umgesetzt
-
-* [x] Digitale Uhr erstellt
-* [x] Stunden-, Minuten- und Sekundenanzeige
-* [x] Deutscher Wochentag
-* [x] Deutsches Datumsformat
-* [x] Automatische Aktualisierung jede Sekunde
-* [x] Begrüßung abhängig von der Tageszeit
-* [x] Eigenes CSS für das Clock-Modul
-* [x] Modulare Einbindung über den Module Loader
-
-### Funktionen
-
-Das Modul zeigt:
-
-```text
-22:45:32
-
-Donnerstag, 16. Juli 2026
-
-Guten Abend
-```
-
-Die Uhrzeit wird clientseitig über JavaScript aktualisiert.
-
----
-
-## Kapitel 6 – Wettermodul
-
-**Status:**
-✅ Abgeschlossen
-
-### Wetter-API
-
-OpenWeather API wurde integriert.
-
-Die API-Anfrage erfolgt über:
-
-```text
-Browser
-    │
-    ▼
-weather.js
-    │
-    ▼
-api/weather.php
-    │
-    ▼
-OpenWeather API
-```
-
-### Sicherheitskonzept
-
-Der API-Key wird nicht direkt im öffentlich erreichbaren Code gespeichert.
-
-Verwendet wird:
-
-```text
-config/secrets.php
-```
-
-Die Datei wird nicht in das Git-Repository übertragen.
-
-### Wetterdaten
-
-Das Modul zeigt aktuell:
-
-* [x] Standort
-* [x] Aktuelle Temperatur
-* [x] Gefühlte Temperatur
-* [x] Wetterbeschreibung
-* [x] Wetter-Icon
-* [x] Luftfeuchtigkeit
-* [x] Windgeschwindigkeit
-* [x] Zeitpunkt der letzten Aktualisierung
-
-### Wetter-Cache
-
-Ein Cache-System wurde implementiert.
-
-Die Wetterdaten werden in:
-
-```text
-cache/weather.json
-```
-
-gespeichert.
-
-Die Cache-Dauer beträgt aktuell:
-
-```text
-600 Sekunden
-```
-
-also:
-
-```text
-10 Minuten
-```
-
-### Cache-Ablauf
-
-```text
-Wetteranfrage
-      │
-      ▼
-Cache vorhanden und jünger als 10 Minuten?
-      │
-      ├── Ja
-      │    │
-      │    └── weather.json verwenden
-      │
-      └── Nein
-           │
-           ▼
-      OpenWeather API
-           │
-           ▼
-      Neue Daten speichern
-           │
-           ▼
-      weather.json
-```
-
-### Rechte
-
-Der Cache-Ordner ist für PHP-FPM beschreibbar.
-
-Der PHP-FPM-Benutzer:
-
-```text
-www-data
-```
-
-kann die Datei:
-
-```text
-cache/weather.json
-```
-
-erstellen und aktualisieren.
-
-### Automatische Aktualisierung
-
-Das Wettermodul ruft die Wetterdaten aktuell alle:
-
-```text
-10 Minuten
-```
-
-neu ab.
-
----
-
-## Kapitel 7 – Slideshow- und Bildverwaltung
-
-**Status:**
-✅ Abgeschlossen
-
-### Slideshow
-
-Eine funktionierende Slideshow wurde als eigenes Modul integriert.
-
-Das Modul:
-
-* [x] Lädt Bilder aus dem Upload-Verzeichnis
-* [x] Unterstützt JPG
-* [x] Unterstützt JPEG
-* [x] Unterstützt PNG
-* [x] Unterstützt WebP
-* [x] Wählt die vorhandenen Bilder zufällig aus
-* [x] Zeigt die Bilder im Dashboard an
-* [x] Wechselt automatisch zwischen den Bildern
-* [x] Verwendet einen konfigurierbaren Wechselintervall
-* [x] Verwendet einen weichen Fade-Übergang
-* [x] Passt Bilder mit `object-fit: contain` an den verfügbaren Bereich an
-
-### Slideshow-Ablauf
-
-```text
-uploads/
-    │
-    ▼
-Slideshow-Modul
-    │
-    ▼
-Bilder einlesen
-    │
-    ▼
-Bilder zufällig mischen
-    │
-    ▼
-Erstes Bild anzeigen
-    │
-    ▼
-Automatischer Bildwechsel
-```
-
-### Upload-Verzeichnis
-
-Die Bilder werden gespeichert in:
-
-```text
-/home/mirror/Projects/SmartMirror/uploads/
-```
-
-Der PHP-FPM-Benutzer `www-data` besitzt die notwendigen Rechte zum:
-
-* [x] Erstellen neuer Bilder
-* [x] Schreiben neuer Dateien
-* [x] Löschen vorhandener Bilder
-
----
-
-### Adminbereich
-
-Eine Weboberfläche zur Bildverwaltung wurde erstellt.
-
-Erreichbar unter:
-
-```text
-http://mirror.local/admin/
-```
-
-Der Adminbereich besteht aus:
-
-```text
-admin/
 │
-├── index.php
-├── upload.php
-├── delete.php
-└── style.css
+├── data/       nicht in Git   settings.json, calendar.ics, refresh_state.json
+├── uploads/    nicht in Git   Bilder
+├── cache/      nicht in Git   weather.json
+└── logs/       nicht in Git
 ```
-
-### Funktionen
-
-* [x] Vorhandene Bilder anzeigen
-* [x] Neue Bilder hochladen
-* [x] Bilder löschen
-* [x] Upload-Logik von der Anzeige getrennt
-* [x] Lösch-Logik von der Anzeige getrennt
-* [x] Eigenes CSS für den Adminbereich
-* [x] Erfolgs- und Fehlermeldungen über Redirects
-
-### Architektur
-
-```text
-Adminbereich
-      │
-      ├── index.php
-      │      │
-      │      ├── Bilder anzeigen
-      │      └── Upload-Formular anzeigen
-      │
-      ├── upload.php
-      │      │
-      │      └── Bild speichern
-      │
-      └── delete.php
-             │
-             └── Bild löschen
-```
-
-### Berechtigungen
-
-Da PHP-FPM unter dem Benutzer:
-
-```text
-www-data
-```
-
-läuft, wurde der Upload-Ordner entsprechend angepasst.
-
-Der Webserver kann dadurch:
-
-```text
-uploads/
-```
-
-beschreiben und verwalten.
 
 ---
 
 # Technische Architektur
 
 ```text
-Browser
-    │
-    ▼
-Nginx
-    │
-    ▼
-PHP-FPM
-    │
-    ▼
-PHP
-    │
-    ├── Module
-    │
-    ├── API
-    │
-    ├── Adminbereich
-    │
-    ├── Cache
-    │
-    ├── Uploads
-    │
-    └── SQLite
+Display
+    ^
+    |
+Chromium im Kiosk-Modus (cage / Wayland)
+    |
+    v
+Nginx  ->  PHP-FPM  ->  PHP
+                          |
+                          ├── Module
+                          ├── API
+                          ├── Adminbereich
+                          ├── data/     Einstellungen
+                          ├── cache/    Wetter
+                          └── uploads/  Bilder
 ```
 
 ---
 
 # Verwendete Technologien
 
-## Backend
+**Backend:** PHP, PHP-FPM
+**Frontend:** HTML, CSS, JavaScript
+**Webserver:** Nginx
+**Anzeige:** Chromium im Kiosk-Modus über cage (Wayland)
+**Wetterdaten:** OpenWeather API
+**Versionsverwaltung:** Git, GitHub
+**Entwicklung:** Visual Studio Code auf einem Windows-PC
 
-* PHP
-* PHP-FPM
-
-## Frontend
-
-* HTML
-* CSS
-* JavaScript
-
-## Webserver
-
-* Nginx
-
-## Datenbank
-
-* SQLite
-
-## Wetterdaten
-
-* OpenWeather API
-
-## Versionsverwaltung
-
-* Git
-* GitHub
-
-## Entwicklungsumgebung
-
-* Visual Studio Code
-* Windows-PC
-* GitHub als Remote Repository
+SQLite war ursprünglich vorgesehen, wird aber nicht verwendet. Die
+Einstellungen liegen als JSON in `data/`, was für den Umfang völlig reicht.
+Die leere Datenbankdatei wurde entfernt.
 
 ---
 
-# Aktueller Entwicklungsworkflow
+# Wichtig für den Betrieb
 
-## Auf dem PC
+## Was nicht in Git liegt
 
-```bash
-git add .
-git commit -m "Beschreibung der Änderung"
-git push
+```text
+config/secrets.php    der API-Key
+data/                 Einstellungen und importierter Kalender
+uploads/              die Bilder
+cache/                der Wetter-Cache
 ```
 
-## Auf dem Raspberry Pi
+Der Grund: Sobald der Pi eine dieser Dateien schreibt, würde `git pull`
+mit einem Konflikt abbrechen. Vorher lagen die Bilder mit im Repository -
+das war ein Fehler, der beim Deployment regelmäßig im Weg stand.
 
-```bash
-cd /home/mirror/Projects/SmartMirror
-git pull
-```
+**Folge:** Hochgeladene Bilder existieren nur auf der SD-Karte des Pi. Ein
+automatisches Backup gibt es bewusst nicht. Die Originale liegen auf dem
+Windows-PC.
 
-Danach kann die Änderung direkt über den Webserver getestet werden.
+## Zeilenenden
 
----
-
-# Nächster Entwicklungsschritt
-
-## Kapitel 8 – Erweiterung des Smart Mirror Systems
-
-Mögliche nächste Entwicklungsschritte:
-
-* [ ] Kalender-Modul
-* [ ] Systeminformations-Modul
-* [ ] Erweiterung des Adminbereichs
-* [ ] Verwaltung von Slideshow-Einstellungen
-* [ ] Konfiguration der Module über den Adminbereich
-* [ ] Benutzer-Login für den Adminbereich
-* [ ] Vorbereitung des dauerhaften Raspberry-Pi-Betriebs
+`.gitattributes` erzwingt LF für alle Textdateien. Ohne das checkt Git unter
+Windows die Shell-Skripte mit CRLF aus, und auf dem Pi scheitert dann jeder
+Aufruf mit `bad interpreter: bash^M`.
 
 ---
 
@@ -681,53 +343,45 @@ Mögliche nächste Entwicklungsschritte:
 
 ## Infrastruktur
 
-* [x] Projekt von root auf normalen Benutzer migrieren
+* [x] Projekt von root auf den Benutzer mirror migrieren
 * [x] Rechte für Nginx und PHP anpassen
-* [ ] Deployment-Skript erstellen
-* [ ] Automatische Backups
-* [ ] Raspberry Pi für den dauerhaften Betrieb optimieren
+* [x] Deployment-Skript erstellen
+* [x] Setup-Skript für einen frischen Pi
+* [x] Raspberry Pi für den Dauerbetrieb optimieren
+* [ ] Automatische Backups (bewusst zurückgestellt)
 
 ## Smart Mirror
 
 * [x] Modulare Architektur
 * [x] Dashboard-Layout
 * [x] Uhr- und Datumsmodul
-* [x] Wettermodul
-* [x] Wetter-API
-* [x] Wetter-Cache
-* [x] Slideshow
-* [x] Bildverwaltung
-* [x] Adminbereich
-* [ ] Benutzer-Login
-* [ ] Chromium-Kiosk-Modus
-* [ ] Autostart
-* [ ] Kalenderintegration
+* [x] Wettermodul mit API und Cache
+* [x] Slideshow und Bildverwaltung
+* [x] Kalenderintegration
+* [x] Systeminformationen
+* [x] Adminbereich mit vollständiger Konfiguration
+* [x] Chromium-Kiosk-Modus
+* [x] Autostart
+* [ ] Benutzer-Login (bewusst zurückgestellt, Heimnetz)
+* [ ] Serientermine im Kalender (RRULE)
+* [ ] Mehrtägige Termine im Kalender
 * [ ] Spotify-Integration
-* [ ] Home-Assistant-Unterstützung (optional)
+* [ ] Home-Assistant-Unterstützung
 
 ---
 
 # Letzter Stand
 
-**Kapitel 7 erfolgreich abgeschlossen.**
+**Kapitel 9 abgeschlossen.**
 
-Der Smart Mirror besitzt jetzt:
+Der Smart Mirror ist funktional fertig. Alles, was für einen Neuaufbau des
+Raspberry Pi nötig ist, liegt im Repository - die Anleitung dazu steht in
+`SETUP.md`.
 
-* eine funktionierende modulare Projektstruktur
-* ein CSS-Grid-Dashboard
-* ein funktionierendes Uhr- und Datumsmodul
-* ein funktionierendes Wettermodul
-* eine OpenWeather-API-Anbindung
-* einen funktionierenden Wetter-Cache
-* eine sichere Trennung des API-Keys
-* eine funktionierende Slideshow
-* eine Bildverwaltung
-* einen funktionierenden Adminbereich
-* Upload- und Löschfunktionen für Bilder
-* eine GitHub-Anbindung
-* Entwicklung über Visual Studio Code
-* Deployment per `git pull`
-* einen normalen Linux-Benutzer `mirror`
-* eine funktionierende Nginx- und PHP-FPM-Umgebung
+Ein neuer Pi ist mit drei Befehlen wieder online:
 
-**Nächster Schritt: Kapitel 8 – Erweiterung des Smart Mirror Systems.**
+```bash
+git clone https://github.com/FloF05/SmartMirror.git
+cd SmartMirror
+sudo deploy/setup.sh
+```

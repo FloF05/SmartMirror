@@ -1,357 +1,248 @@
 <?php
 
-$uploadDirectory =
-__DIR__ . "/../uploads/";
+require __DIR__ . "/../app/settings.php";
 
-$calendarSettingsFile =
-__DIR__ . "/../uploads/calendar_settings.json";
-
-$legacyCalendarSettingsFile =
-__DIR__ . "/../config/calendar_settings.json";
+$settings = loadSettings();
 
 $images = [];
 
-$calendarSettings = [
-    "view" => "month"
-];
+if (is_dir(uploadsDirectory())) {
 
-if(
-    file_exists(
-        $calendarSettingsFile
-    )
-)
-{
-    $decodedSettings =
-    json_decode(
-        file_get_contents(
-            $calendarSettingsFile
-        ),
-        true
-    );
+    foreach (scandir(uploadsDirectory()) as $file) {
 
-    if(
-        is_array(
-            $decodedSettings
-        )
-    )
-    {
-        $calendarSettings =
-        array_merge(
-            $calendarSettings,
-            $decodedSettings
-        );
-    }
-}
-elseif(
-    file_exists(
-        $legacyCalendarSettingsFile
-    )
-)
-{
-    $decodedSettings =
-    json_decode(
-        file_get_contents(
-            $legacyCalendarSettingsFile
-        ),
-        true
-    );
-
-    if(
-        is_array(
-            $decodedSettings
-        )
-    )
-    {
-        $calendarSettings =
-        array_merge(
-            $calendarSettings,
-            $decodedSettings
-        );
-    }
-}
-
-
-if(
-    is_dir(
-        $uploadDirectory
-    )
-)
-{
-
-    $files =
-    scandir(
-        $uploadDirectory
-    );
-
-
-    foreach(
-        $files
-        as $file
-    )
-    {
-
-        $filePath =
-        $uploadDirectory
-        . $file;
-
-
-        if(
-            !is_file(
-                $filePath
-            )
-        )
-        {
+        if (!is_file(uploadsDirectory() . "/" . $file)) {
             continue;
         }
 
+        $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 
-        $extension =
-        strtolower(
-            pathinfo(
-                $file,
-                PATHINFO_EXTENSION
-            )
-        );
-
-
-        if(
-            in_array(
-                $extension,
-                [
-                    "jpg",
-                    "jpeg",
-                    "png",
-                    "webp"
-                ]
-            )
-        )
-        {
-
-            $images[] =
-            $file;
-
+        if (in_array($extension, ["jpg", "jpeg", "png", "webp"], true)) {
+            $images[] = $file;
         }
-
     }
-
 }
 
+sort($images);
+
+$successMessages = [
+    "settings" => "Einstellungen gespeichert. Der Spiegel lädt sich in wenigen Sekunden neu.",
+    "upload"   => "Bild hochgeladen.",
+    "delete"   => "Bild gelöscht."
+];
+
+$errorMessages = [
+    "upload"     => "Die Datei konnte nicht hochgeladen werden. Ist sie zu groß?",
+    "type"       => "Dieser Dateityp wird nicht unterstützt.",
+    "save"       => "Die Datei konnte nicht gespeichert werden.",
+    "delete"     => "Das Bild konnte nicht gelöscht werden.",
+    "encoding"   => "Der Ortsname enthält ungültige Zeichen.",
+    "permission" => "Keine Schreibrechte. Prüfe die Rechte auf data/ und uploads/."
+];
+
+$success = $successMessages[$_GET["success"] ?? ""] ?? null;
+$error   = $errorMessages[$_GET["error"] ?? ""] ?? null;
+
+$calendarImported = is_file(calendarFile());
+
 ?>
-
-
 <!DOCTYPE html>
-
 <html lang="de">
-
 
 <head>
 
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
+<title>SmartMirror Verwaltung</title>
 
-<title>
-SmartMirror Bildverwaltung
-</title>
-
-
-<link
-    rel="stylesheet"
-    href="style.css"
->
-
+<link rel="stylesheet" href="style.css">
 
 </head>
 
-
 <body>
 
+<h1>SmartMirror Verwaltung</h1>
 
-<h1>
-SmartMirror Bildverwaltung
-</h1>
+<?php if ($success !== null): ?>
+    <p class="success"><?= htmlspecialchars($success) ?></p>
+<?php endif; ?>
 
-
-
-<?php if(
-    isset(
-        $_GET["success"]
-    )
-): ?>
-
-<p class="success">
-
-Aktion erfolgreich.
-
-</p>
-
+<?php if ($error !== null): ?>
+    <p class="error"><?= htmlspecialchars($error) ?></p>
 <?php endif; ?>
 
 
+<form method="POST" action="save_settings.php" enctype="multipart/form-data">
 
-<?php if(
-    isset(
-        $_GET["error"]
-    )
-): ?>
+    <h2>Module</h2>
 
-<p class="error">
-
-Es ist ein Fehler aufgetreten.
-
-</p>
-
-<?php endif; ?>
-
-
-
-<h2>
-Kalender-Einstellungen
-</h2>
-
-<p>
-Aktuelle Ansicht: <strong><?= htmlspecialchars($calendarSettings["view"] === "week" ? "Woche" : "Monat") ?></strong>
-</p>
-
-<?php if (isset($_GET['success'])): ?>
-<p class="success">Einstellungen gespeichert.</p>
-<?php endif; ?>
-
-<?php if (isset($_GET['error'])): ?>
-<p class="error">Es gab ein Problem beim Speichern.</p>
-<?php endif; ?>
-
-<form
-    method="POST"
-    action="save_calendar.php"
-    enctype="multipart/form-data"
->
-
-<label>
-Ansicht
-<select name="calendar_view">
-<option value="month" <?= $calendarSettings["view"] === "month" ? "selected" : "" ?>>Monat</option>
-<option value="week" <?= $calendarSettings["view"] === "week" ? "selected" : "" ?>>Woche</option>
-</select>
-</label>
-
-<br><br>
-
-<label>
-ICS-Datei importieren
-<input type="file" name="calendar_ics" accept=".ics">
-</label>
-
-<br><br>
-
-<button type="submit">
-Speichern
-</button>
-
-</form>
-
-<h2>
-Bild hochladen
-</h2>
+    <div class="field-group">
+        <?php foreach ($settings["available_modules"] as $module => $label): ?>
+            <label class="checkbox">
+                <input
+                    type="checkbox"
+                    name="modules[]"
+                    value="<?= htmlspecialchars($module) ?>"
+                    <?= in_array($module, $settings["modules"], true) ? "checked" : "" ?>
+                >
+                <?= htmlspecialchars($label) ?>
+            </label>
+        <?php endforeach; ?>
+    </div>
 
 
-<form
-    method="POST"
-    action="upload.php"
-    enctype="multipart/form-data"
->
+    <h2>Uhr</h2>
+
+    <div class="field-group">
+        <label class="checkbox">
+            <input
+                type="checkbox"
+                name="clock_show_seconds"
+                <?= $settings["clock"]["show_seconds"] ? "checked" : "" ?>
+            >
+            Sekunden anzeigen
+        </label>
+
+        <label>
+            Format
+            <select name="clock_format">
+                <option value="24" <?= $settings["clock"]["format"] === "24" ? "selected" : "" ?>>24 Stunden</option>
+                <option value="12" <?= $settings["clock"]["format"] === "12" ? "selected" : "" ?>>12 Stunden (AM/PM)</option>
+            </select>
+        </label>
+    </div>
 
 
-<input
-    type="file"
-    name="image"
-    accept=".jpg,.jpeg,.png,.webp"
-    required
->
+    <h2>Wetter</h2>
+
+    <div class="field-group">
+        <label>
+            Stadt
+            <input
+                type="text"
+                name="weather_city"
+                value="<?= htmlspecialchars($settings["weather"]["city"]) ?>"
+                required
+            >
+        </label>
+
+        <label>
+            Land (zweistelliger Code, z. B. DE)
+            <input
+                type="text"
+                name="weather_country"
+                value="<?= htmlspecialchars($settings["weather"]["country"]) ?>"
+                maxlength="2"
+                pattern="[A-Za-z]{2}"
+            >
+        </label>
+    </div>
 
 
-<button
-    type="submit"
->
+    <h2>Diashow</h2>
 
-Hochladen
-
-</button>
-
-
-</form>
-
-
-
-<h2>
-Vorhandene Bilder
-</h2>
-
-
-<div class="gallery">
+    <div class="field-group">
+        <label>
+            Bildwechsel alle … Sekunden
+            <input
+                type="number"
+                name="slideshow_interval"
+                value="<?= htmlspecialchars((string) ($settings["slideshow"]["interval"] / 1000)) ?>"
+                min="1"
+                max="600"
+                step="1"
+            >
+        </label>
+    </div>
 
 
-<?php foreach(
-    $images
-    as $image
-): ?>
+    <h2>Kalender</h2>
+
+    <div class="field-group">
+        <label>
+            Ansicht
+            <select name="calendar_view">
+                <option value="month" <?= $settings["calendar"]["view"] === "month" ? "selected" : "" ?>>Monat</option>
+                <option value="week" <?= $settings["calendar"]["view"] === "week" ? "selected" : "" ?>>Woche</option>
+            </select>
+        </label>
+
+        <label>
+            ICS-Datei importieren
+            <input type="file" name="calendar_ics" accept=".ics">
+        </label>
+
+        <?php if ($calendarImported): ?>
+            <p class="hint">
+                Importiert am
+                <?= htmlspecialchars(date("d.m.Y H:i", filemtime(calendarFile()))) ?>
+            </p>
+            <label class="checkbox">
+                <input type="checkbox" name="calendar_remove">
+                Importierten Kalender entfernen
+            </label>
+        <?php else: ?>
+            <p class="hint">Noch kein Kalender importiert.</p>
+        <?php endif; ?>
+    </div>
 
 
-<div class="image-card">
-
-
-<img
-    src="../uploads/<?= htmlspecialchars(
-        $image
-    ) ?>"
->
-
-
-<p>
-
-<?= htmlspecialchars(
-    $image
-) ?>
-
-</p>
-
-
-<form
-    method="POST"
-    action="delete.php"
->
-
-
-<input
-    type="hidden"
-    name="delete"
-    value="<?= htmlspecialchars(
-        $image
-    ) ?>"
->
-
-
-<button
-    type="submit"
->
-
-Löschen
-
-</button>
-
+    <button type="submit">Einstellungen speichern</button>
 
 </form>
 
 
-</div>
+<h2>Bild hochladen</h2>
+
+<form method="POST" action="upload.php" enctype="multipart/form-data">
+
+    <input
+        type="file"
+        name="image"
+        accept=".jpg,.jpeg,.png,.webp"
+        required
+    >
+
+    <button type="submit">Hochladen</button>
+
+</form>
 
 
-<?php endforeach; ?>
+<h2>Vorhandene Bilder (<?= count($images) ?>)</h2>
 
+<?php if ($images === []): ?>
 
-</div>
+    <p class="hint">Noch keine Bilder vorhanden.</p>
 
+<?php else: ?>
+
+    <div class="gallery">
+
+        <?php foreach ($images as $image): ?>
+
+            <div class="image-card">
+
+                <img src="../uploads/<?= rawurlencode($image) ?>" alt="">
+
+                <p><?= htmlspecialchars($image) ?></p>
+
+                <form method="POST" action="delete.php">
+                    <input
+                        type="hidden"
+                        name="delete"
+                        value="<?= htmlspecialchars($image) ?>"
+                    >
+                    <button type="submit">Löschen</button>
+                </form>
+
+            </div>
+
+        <?php endforeach; ?>
+
+    </div>
+
+<?php endif; ?>
 
 </body>
-
 
 </html>

@@ -20,6 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Ganztägige Termine haben keine Uhrzeit, terminierte schon.
+    const eventLabel = (event) => event.time
+        ? `${event.time} ${event.summary}`
+        : event.summary;
+
     const renderMonthView = (events) => {
         const now = new Date();
         const year = now.getFullYear();
@@ -67,9 +72,16 @@ document.addEventListener('DOMContentLoaded', () => {
             dayEvents.slice(0, 2).forEach(event => {
                 const eventElement = document.createElement('div');
                 eventElement.className = 'calendar-event';
-                eventElement.textContent = event.summary;
+                eventElement.textContent = eventLabel(event);
                 cell.appendChild(eventElement);
             });
+
+            if (dayEvents.length > 2) {
+                const more = document.createElement('div');
+                more.className = 'calendar-event calendar-event--more';
+                more.textContent = `+${dayEvents.length - 2} weitere`;
+                cell.appendChild(more);
+            }
 
             if (
                 day === now.getDate() &&
@@ -120,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 dayEvents.forEach(event => {
                     const eventElement = document.createElement('div');
                     eventElement.className = 'calendar-event';
-                    eventElement.textContent = event.summary;
+                    eventElement.textContent = eventLabel(event);
                     panel.appendChild(eventElement);
                 });
             }
