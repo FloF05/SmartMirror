@@ -7,6 +7,15 @@ require "app/css_loader.php";
 require "app/js_loader.php";
 
 $reloadRequested = isset($_GET['reload']) && $_GET['reload'] === '1';
+$refreshStateFile = __DIR__ . '/uploads/refresh_state.json';
+$refreshVersion = 0;
+
+if (file_exists($refreshStateFile)) {
+    $decodedRefresh = json_decode(file_get_contents($refreshStateFile), true);
+    if (is_array($decodedRefresh)) {
+        $refreshVersion = (int) ($decodedRefresh['version'] ?? 0);
+    }
+}
 ?>
 
 
@@ -58,15 +67,33 @@ foreach($config["modules"] as $module)
 
 <?php loadModuleJS($config["modules"]); ?>
 
-<?php if ($reloadRequested): ?>
 <script>
-    window.addEventListener('load', () => {
-        setTimeout(() => {
-            window.location.reload();
-        }, 1000);
-    });
+    const refreshKey = 'smartmirror_refresh_version';
+    let currentVersion = parseInt(localStorage.getItem(refreshKey) || '0', 10);
+
+    const checkRefresh = async () => {
+        try {
+            const response = await fetch('api/refresh_state.php');
+            if (!response.ok) {
+                return;
+            }
+
+            const data = await response.json();
+            const serverVersion = parseInt(data.version || '0', 10);
+
+            if (serverVersion > currentVersion) {
+                currentVersion = serverVersion;
+                localStorage.setItem(refreshKey, String(currentVersion));
+                window.location.reload();
+            }
+        } catch (error) {
+            console.log('Refresh check failed', error);
+        }
+    };
+
+    checkRefresh();
+    setInterval(checkRefresh, 2000);
 </script>
-<?php endif; ?>
 
 
 </body>
