@@ -1,7 +1,7 @@
 # SmartMirror auf dem Raspberry Pi einrichten
 
 Anleitung für einen komplett neuen Raspberry Pi. Von der leeren SD-Karte bis
-zum laufenden Spiegel sind es fünf Schritte.
+zum laufenden Spiegel sind es sechs Schritte.
 
 ---
 
@@ -21,8 +21,16 @@ Im **Raspberry Pi Imager**:
 
 | Feld | Wert |
 |---|---|
-| Betriebssystem | Raspberry Pi OS **Lite** (64 Bit) |
+| Betriebssystem | Raspberry Pi OS **Lite** (64 Bit), aktuelle Version |
 | Speicherkarte | die microSD-Karte |
+
+**Lite** ist entscheidend: die Desktop-Version bringt einen kompletten
+Arbeitsplatz mit, der auf 512 MB RAM neben Chromium keinen Platz hat. Die
+Anzeige übernimmt cage – ein Compositor, der nichts weiter kann, als eine
+einzige Anwendung im Vollbild zu zeigen.
+
+Die genaue OS-Version ist egal, `setup.sh` erkennt die PHP-Version selbst
+und konfiguriert Nginx passend.
 
 Vor dem Schreiben auf **Einstellungen bearbeiten** klicken. Das ist der
 wichtigste Teil – hier vorkonfiguriert, entfällt später die gesamte
@@ -58,28 +66,51 @@ ssh mirror@mirror.local
 
 ---
 
-## Schritt 3 – Projekt holen
+## Schritt 3 – SSH-Key für GitHub
+
+Das Repository ist **privat**. Der Pi kommt ohne Schlüssel nicht daran –
+dieser Schritt lässt sich also nicht überspringen.
+
+Auf dem Pi einen Schlüssel erzeugen (dreimal Enter, keine Passphrase):
+
+```bash
+ssh-keygen -t ed25519 -C "mirror@raspberry"
+cat ~/.ssh/id_ed25519.pub
+```
+
+Die ausgegebene Zeile komplett kopieren und bei GitHub eintragen:
+
+**<https://github.com/settings/ssh/new>**
+
+| Feld | Wert |
+|---|---|
+| Title | `Raspberry Pi Mirror` |
+| Key type | Authentication Key |
+| Key | die kopierte Zeile |
+
+Verbindung testen:
+
+```bash
+ssh -T git@github.com
+```
+
+Beim ersten Mal nach der Echtheit des Hosts fragt er – mit `yes` bestätigen.
+Richtig ist die Antwort `Hi FloF05! You've successfully authenticated`.
+
+---
+
+## Schritt 4 – Projekt holen
 
 ```bash
 mkdir -p ~/Projects
 cd ~/Projects
-git clone https://github.com/FloF05/SmartMirror.git
+git clone git@github.com:FloF05/SmartMirror.git
 cd SmartMirror
 ```
 
-> **Zu einem privaten Repository** kommt der Pi so nicht durch. Dann vorher
-> einen SSH-Key anlegen, den öffentlichen Teil bei GitHub unter
-> *Settings → SSH and GPG keys* hinterlegen und stattdessen die SSH-Adresse
-> klonen:
-> ```bash
-> ssh-keygen -t ed25519 -C "mirror@raspberry"
-> cat ~/.ssh/id_ed25519.pub
-> git clone git@github.com:FloF05/SmartMirror.git
-> ```
-
 ---
 
-## Schritt 4 – Einrichten
+## Schritt 5 – Einrichten
 
 ```bash
 sudo deploy/setup.sh
@@ -108,7 +139,7 @@ Nach dem Neustart zeigt das Display den Spiegel im Vollbild.
 
 ---
 
-## Schritt 5 – Inhalte einrichten
+## Schritt 6 – Inhalte einrichten
 
 Im Browser am PC: **<http://mirror.local/admin/>**
 
@@ -177,7 +208,12 @@ Häufigste Ursachen:
 * **`Permission denied` auf `/dev/dri`** – der Benutzer war beim Start noch
   nicht in der Gruppe `video`. Ein Neustart behebt das.
 * **Chromium startet und stirbt sofort** – meist zu wenig Speicher. Prüfen
-  mit `free -h`, ob zram als Swap aktiv ist.
+  mit `free -h`, ob zram als Swap aktiv ist, und mit
+  `journalctl -k | grep -i "out of memory"`, ob der Kernel ihn abgeschossen
+  hat. Passiert das dauerhaft, ist die 32-Bit-Version von Raspberry Pi OS
+  Lite die Notlösung: sie braucht spürbar weniger Arbeitsspeicher. Am
+  Projekt ändert sich dabei nichts, `setup.sh` läuft auf beiden
+  Architekturen.
 
 Hinweis: `setup.sh` schaltet die Textkonsole auf `tty1` ab, weil sie sich
 sonst mit dem Kiosk um den Bildschirm streitet. Der Zugang läuft ab dann
