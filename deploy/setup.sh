@@ -40,6 +40,18 @@ info "SmartMirror-Einrichtung"
 ok "Projekt:  $PROJECT_DIR"
 ok "Benutzer: $TARGET_USER (UID $TARGET_UID)"
 
+# Auf einem 512-MB-Pi scheitert systemctl gelegentlich am Speicher. Das
+# Skript kommt damit klar - die Dienste sind über ihre Unit-Dateien trotzdem
+# aktiviert und starten spätestens beim nächsten Booten.
+SYSTEMCTL_OK=yes
+
+if ! systemctl is-system-running >/dev/null 2>&1; then
+    if ! systemctl --version >/dev/null 2>&1; then
+        SYSTEMCTL_OK=no
+        warn "systemctl antwortet nicht - Dienste starten erst nach dem Neustart."
+    fi
+fi
+
 # --- 1. System und Pakete --------------------------------------------------
 
 info "System aktualisieren"
@@ -108,7 +120,19 @@ PHP_VERSION="$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')"
 PHP_SOCKET="/run/php/php${PHP_VERSION}-fpm.sock"
 PHP_SERVICE="php${PHP_VERSION}-fpm"
 
-systemctl list-unit-files | grep -q "^${PHP_SERVICE}.service" \
+# Direkt nach der Unit-Datei schauen statt systemctl fragen: auf einem
+# 512-MB-Pi kann systemctl nach einer grossen apt-Transaktion kurzzeitig
+# nicht startbar sein ("Could not execute systemctl"). Die Datei liegt
+# dann trotzdem da - der Dienst ist also sehr wohl installiert.
+unit_installed() {
+    local unit="$1"
+
+    [[ -f "/lib/systemd/system/${unit}.service" ]] \
+        || [[ -f "/usr/lib/systemd/system/${unit}.service" ]] \
+        || [[ -f "/etc/systemd/system/${unit}.service" ]]
+}
+
+unit_installed "$PHP_SERVICE" \
     || fail "Dienst ${PHP_SERVICE} nicht gefunden. Ist php-fpm installiert?"
 
 systemctl enable --now "$PHP_SERVICE" >/dev/null 2>&1 || true
@@ -227,7 +251,7 @@ info "SD-Karte schonen"
 # Ersatz ist zram: komprimierter Swap im RAM. Das schont die Karte genauso,
 # lässt dem Pi Zero 2 W mit seinen 512 MB aber Luft, bevor der Kernel
 # anfängt, Chromium abzuschießen.
-if systemctl list-unit-files | grep -q "^dphys-swapfile"; then
+if unit_installed dphys-swapfile; then
     dphys-swapfile swapoff >/dev/null 2>&1 || true
     dphys-swapfile uninstall >/dev/null 2>&1 || true
     systemctl disable dphys-swapfile >/dev/null 2>&1 || true
