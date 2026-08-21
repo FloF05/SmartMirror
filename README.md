@@ -2,10 +2,14 @@
 
 Webbasierter Smart Mirror auf einem Raspberry Pi Zero W.
 
-Ein Nginx mit PHP liefert ein Vollbild-Dashboard aus, das Chromium im
+Ein Nginx mit PHP liefert ein Vollbild-Dashboard aus, das ein Browser im
 Kiosk-Modus auf dem Display anzeigt. Alle Inhalte lassen sich über einen
 Adminbereich im Browser verwalten – der Spiegel lädt sich nach jeder
 Änderung von selbst neu.
+
+> Auf ARMv6-Hardware (Pi Zero W, Pi 1) richtet `setup.sh` nur den Server
+> ein – für diese CPU gibt es kein Chromium. Welcher Browser dort die
+> Anzeige übernehmen kann, klärt `deploy/probe.sh`.
 
 ## Module
 
