@@ -1,106 +1,114 @@
-.calendar-module {
+.calendar-head {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 20px;
-    box-sizing: border-box;
-    height: 100%;
-}
-
-.calendar-header {
-    display: flex;
+    align-items: baseline;
     justify-content: space-between;
-    align-items: center;
+    gap: 20px;
 }
 
-.calendar-header h2 {
-    margin: 0;
-    font-size: 1.6rem;
+.calendar-range {
+    font-size: var(--size-label);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
 }
 
-.calendar-month {
-    font-size: 1rem;
-    opacity: 0.8;
+/* --- Agenda ------------------------------------------------------------- */
+
+.agenda-day {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 12px;
 }
+
+.agenda-date {
+    flex: 0 0 128px;
+    font-size: var(--size-small);
+    color: var(--text-dim);
+    padding-top: 0.15em;
+}
+
+.agenda-day--today .agenda-date {
+    color: var(--text);
+}
+
+.agenda-entries {
+    flex: 1;
+    min-width: 0;
+}
+
+.agenda-entry {
+    display: flex;
+    gap: 14px;
+    font-size: var(--size-body);
+    margin-bottom: 4px;
+}
+
+.agenda-time {
+    flex: 0 0 auto;
+    color: var(--text-soft);
+    font-variant-numeric: tabular-nums;
+}
+
+.agenda-title {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.agenda-entry--holiday .agenda-title {
+    color: var(--accent);
+}
+
+.calendar-empty {
+    font-size: var(--size-small);
+    color: var(--text-dim);
+}
+
+/* --- Monatsraster ------------------------------------------------------- */
 
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 6px;
-    flex: 1;
+    gap: 4px;
+    font-size: var(--size-small);
 }
 
-.calendar-day {
+.calendar-cell {
+    aspect-ratio: 1;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    align-items: flex-start;
-    min-height: 42px;
-    border-radius: 6px;
-    background: rgba(255,255,255,0.08);
-    font-size: 0.95rem;
-    padding: 6px;
-    gap: 4px;
-}
-
-.calendar-day--today {
-    background: #4da3ff;
-    color: #000;
-    font-weight: bold;
-}
-
-.calendar-day--label {
-    background: transparent;
-    opacity: 0.7;
-    font-size: 0.8rem;
-    justify-content: center;
     align-items: center;
-    padding: 0;
+    justify-content: center;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-soft);
 }
 
-.calendar-day-number {
-    font-weight: bold;
+.calendar-cell--label {
+    aspect-ratio: auto;
+    font-size: var(--size-label);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding-bottom: 6px;
 }
 
-.calendar-event {
-    font-size: 0.72rem;
-    line-height: 1.1;
-    opacity: 0.9;
+/* Der heutige Tag bekommt einen Ring statt einer Fuellung -
+   Flaechen gluehen hinter Spiegelglas. */
+.calendar-cell--today {
+    color: var(--text);
+    border: 1px solid var(--text);
+    border-radius: 50%;
 }
 
-.calendar-event--more {
-    opacity: 0.6;
-    font-style: italic;
+.calendar-cell--holiday {
+    color: var(--accent);
 }
 
-.calendar-empty {
-    font-size: 0.9rem;
-    opacity: 0.7;
-}
-
-.calendar-week {
-    display: grid;
-    gap: 8px;
-}
-
-.calendar-week-day {
-    background: rgba(255,255,255,0.06);
-    border-radius: 6px;
-    padding: 8px;
-}
-
-.calendar-week-day h4 {
-    margin: 0 0 6px 0;
-    font-size: 0.95rem;
-}
-
-@media (orientation: portrait) {
-    .calendar-module {
-        padding: 24px;
-    }
-
-    .calendar-day {
-        min-height: 54px;
-        font-size: 1rem;
-    }
+.calendar-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--text-soft);
+    margin-top: 3px;
 }

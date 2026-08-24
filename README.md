@@ -15,10 +15,14 @@ Adminbereich im Browser verwalten – der Spiegel lädt sich nach jeder
 
 | Modul | Inhalt |
 |---|---|
-| Uhr | Uhrzeit, deutsches Datum, Begrüßung nach Tageszeit |
-| Wetter | OpenWeather mit lokalem Cache |
+| Uhr | Uhrzeit, deutsches Datum, Begrüßung, Kalenderwoche |
+| Wetter | Aktuell, 4-Tage-Vorhersage, Sonnenzeiten, Mondphase, Luftqualität |
+| Countdown | Tage bis zu frei wählbaren Terminen |
+| Termine | Agenda oder Monatsraster aus ICS, inklusive deutscher Feiertage |
+| Listen | Einkaufs- oder To-do-Liste, im Adminbereich pflegbar |
+| Nachrichten | Schlagzeilen aus einem RSS-Feed |
+| Zitat | Wechselt täglich, ohne Netzwerk |
 | Diashow | Bilder aus `uploads/`, zufällige Reihenfolge |
-| Kalender | Monats- oder Wochenansicht aus einer ICS-Datei |
 | Systeminfo | Host, CPU-Last, RAM, Uptime |
 
 Jedes Modul lässt sich im Adminbereich einzeln abschalten.

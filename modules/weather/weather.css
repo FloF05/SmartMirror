@@ -1,94 +1,103 @@
-.weather-module
-{
+.weather-head {
     display: flex;
-
-    flex-direction: column;
-
     align-items: center;
+    gap: 26px;
+}
 
-    gap: 8px;
+.weather-symbol {
+    /* DejaVu Sans steht auf Raspberry Pi OS Lite immer zur Verfügung und
+       enthält die verwendeten Wetterzeichen einfarbig. */
+    font-family: "DejaVu Sans", "Segoe UI Symbol", sans-serif;
+    font-size: var(--size-xl);
+    line-height: 1;
+}
 
-    padding: 20px;
+.weather-now {
+    flex: 1;
+    min-width: 0;
+}
 
+.weather-temp {
+    font-size: var(--size-xl);
+    font-weight: 200;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.weather-description {
+    font-size: var(--size-body);
+    margin-top: 4px;
+
+    /* Beschreibungen wie "überwiegend bewölkt" dürfen nicht umbrechen */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.weather-side {
+    text-align: right;
+    font-size: var(--size-small);
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.weather-extra {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 34px;
+
+    margin-top: 18px;
+    font-size: var(--size-small);
+    color: var(--text-soft);
+}
+
+.weather-extra:empty {
+    display: none;
+}
+
+.weather-extra .glyph {
+    font-family: "DejaVu Sans", "Segoe UI Symbol", sans-serif;
+    margin-right: 7px;
+    color: var(--text);
+}
+
+.weather-forecast {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+
+    margin-top: 20px;
+}
+
+.weather-forecast:empty {
+    display: none;
+}
+
+.forecast-day {
+    flex: 1;
     text-align: center;
+    min-width: 0;
 }
 
-
-#weather-location
-{
-    margin: 0;
-
-    font-size: 2rem;
+.forecast-name {
+    font-size: var(--size-label);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
 }
 
-
-#weather-icon img
-{
-    width: 100px;
-
-    height: 100px;
+.forecast-symbol {
+    font-family: "DejaVu Sans", "Segoe UI Symbol", sans-serif;
+    font-size: var(--size-large);
+    line-height: 1.3;
 }
 
-
-#weather-temp
-{
-    font-size: 3rem;
-
-    font-weight: bold;
+.forecast-temp {
+    font-size: var(--size-small);
+    font-variant-numeric: tabular-nums;
 }
 
-
-#weather-description
-{
-    font-size: 1.3rem;
-
-    text-transform: capitalize;
-}
-
-
-#weather-feels,
-#weather-humidity,
-#weather-wind
-{
-    font-size: 1rem;
-
-    opacity: 0.8;
-}
-
-
-#weather-updated
-{
-    margin-top: 10px;
-
-    font-size: 0.8rem;
-
-    opacity: 0.5;
-}
-
-@media (orientation: portrait)
-{
-    #weather-location
-    {
-        font-size: 2.5rem;
-    }
-
-
-    #weather-icon img
-    {
-        width: 140px;
-
-        height: 140px;
-    }
-
-
-    #weather-temp
-    {
-        font-size: 4rem;
-    }
-
-
-    #weather-description
-    {
-        font-size: 1.8rem;
-    }
+.forecast-temp .low {
+    color: var(--text-dim);
+    margin-left: 8px;
 }

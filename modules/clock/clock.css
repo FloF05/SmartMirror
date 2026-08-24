@@ -1,60 +1,33 @@
-.clock-module {
+.clock-time {
+    font-size: var(--size-clock);
+    font-weight: 200;
+    line-height: 1;
+    letter-spacing: -0.02em;
 
-    display:flex;
-
-    flex-direction:column;
-
-    justify-content:center;
-
-    align-items:center;
-
+    /* Ohne das springt das Layout bei jeder Ziffernänderung */
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
 }
 
+.clock-below {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px 24px;
 
-#clock-time {
-
-    font-size:120px;
-
-    font-weight:bold;
-
+    margin-top: 14px;
 }
 
-
-#clock-date {
-
-    font-size:35px;
-
-    margin-top:20px;
-
+.clock-date {
+    font-size: var(--size-large);
+    font-weight: 300;
 }
 
+.clock-meta {
+    display: flex;
+    gap: 18px;
 
-#clock-greeting {
-
-    font-size:30px;
-
-    margin-top:15px;
-
-    opacity:0.8;
-
-}
-
-@media (orientation: portrait)
-{
-    #clock-time
-    {
-        font-size: 6rem;
-    }
-
-
-    #clock-date
-    {
-        font-size: 2rem;
-    }
-
-
-    #clock-greeting
-    {
-        font-size: 2rem;
-    }
+    font-size: var(--size-small);
+    color: var(--text-soft);
 }

@@ -1,172 +1,197 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const grid = document.getElementById('calendar-grid');
-    const monthLabel = document.getElementById('calendar-month');
-    const emptyState = document.getElementById('calendar-empty');
+(() => {
 
-    if (!grid || !monthLabel) {
+    const body = document.getElementById("calendar-body");
+    const range = document.getElementById("calendar-range");
+
+    if (!body) {
         return;
     }
 
-    const showEmptyState = (message) => {
-        if (emptyState) {
-            emptyState.textContent = message;
-            emptyState.style.display = 'block';
+    const weekdays = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+
+    const pad = value => String(value).padStart(2, "0");
+
+    const showMessage = text => {
+        body.innerHTML = "";
+
+        const empty = document.createElement("div");
+        empty.className = "calendar-empty";
+        empty.textContent = text;
+
+        body.appendChild(empty);
+    };
+
+    // "Heute", "Morgen", sonst "Mi 27.08."
+    const dateLabel = key => {
+        const date = new Date(key + "T00:00:00");
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const diff = Math.round((date - today) / 86400000);
+
+        if (diff === 0) return "Heute";
+        if (diff === 1) return "Morgen";
+
+        return weekdays[date.getDay()] + " "
+            + pad(date.getDate()) + "." + pad(date.getMonth() + 1) + ".";
+    };
+
+    const renderAgenda = data => {
+        const entries = Array.isArray(data.agenda) ? data.agenda : [];
+
+        if (entries.length === 0) {
+            showMessage("Keine Termine in naechster Zeit.");
+            return;
+        }
+
+        // Nach Tag gruppieren, damit das Datum nicht bei jedem Eintrag steht
+        const byDay = new Map();
+
+        entries.forEach(entry => {
+            if (!byDay.has(entry.date)) {
+                byDay.set(entry.date, []);
+            }
+            byDay.get(entry.date).push(entry);
+        });
+
+        body.innerHTML = "";
+
+        byDay.forEach((dayEntries, key) => {
+            const row = document.createElement("div");
+            row.className = "agenda-day";
+
+            if (key === data.today) {
+                row.classList.add("agenda-day--today");
+            }
+
+            const label = document.createElement("div");
+            label.className = "agenda-date";
+            label.textContent = dateLabel(key);
+
+            const list = document.createElement("div");
+            list.className = "agenda-entries";
+
+            dayEntries.forEach(entry => {
+                const item = document.createElement("div");
+                item.className = "agenda-entry";
+
+                if (entry.type === "holiday") {
+                    item.classList.add("agenda-entry--holiday");
+                }
+
+                const time = document.createElement("div");
+                time.className = "agenda-time";
+                time.textContent = entry.time || "\u2014";
+
+                const title = document.createElement("div");
+                title.className = "agenda-title";
+                title.textContent = entry.summary;
+
+                item.append(time, title);
+                list.appendChild(item);
+            });
+
+            row.append(label, list);
+            body.appendChild(row);
+        });
+
+        if (range) {
+            range.textContent = "";
         }
     };
 
-    const hideEmptyState = () => {
-        if (emptyState) {
-            emptyState.style.display = 'none';
-        }
-    };
-
-    // Ganztägige Termine haben keine Uhrzeit, terminierte schon.
-    const eventLabel = (event) => event.time
-        ? `${event.time} ${event.summary}`
-        : event.summary;
-
-    const renderMonthView = (events) => {
+    const renderMonth = data => {
         const now = new Date();
         const year = now.getFullYear();
         const month = now.getMonth();
 
-        monthLabel.textContent = now.toLocaleString('de-DE', {
-            month: 'long',
-            year: 'numeric'
-        });
+        const first = new Date(year, month, 1);
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const offset = (first.getDay() + 6) % 7;
 
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        const daysInMonth = lastDay.getDate();
-        const startWeekday = (firstDay.getDay() + 6) % 7;
+        const grid = document.createElement("div");
+        grid.className = "calendar-grid";
 
-        grid.innerHTML = '';
-        grid.className = 'calendar-grid';
-
-        const labels = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
-        labels.forEach(label => {
-            const cell = document.createElement('div');
-            cell.className = 'calendar-day calendar-day--label';
-            cell.textContent = label;
+        ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].forEach(name => {
+            const cell = document.createElement("div");
+            cell.className = "calendar-cell calendar-cell--label";
+            cell.textContent = name;
             grid.appendChild(cell);
         });
 
-        for (let i = 0; i < startWeekday; i += 1) {
-            const emptyCell = document.createElement('div');
-            emptyCell.className = 'calendar-day';
-            grid.appendChild(emptyCell);
+        for (let i = 0; i < offset; i += 1) {
+            grid.appendChild(document.createElement("div"));
         }
+
+        const dates = new Set((data.events || []).map(event => event.date));
+        const holidays = data.holidays || {};
 
         for (let day = 1; day <= daysInMonth; day += 1) {
-            const cell = document.createElement('div');
-            cell.className = 'calendar-day';
 
-            const dayNumber = document.createElement('div');
-            dayNumber.className = 'calendar-day-number';
-            dayNumber.textContent = day;
-            cell.appendChild(dayNumber);
+            const key = year + "-" + pad(month + 1) + "-" + pad(day);
 
-            const dayKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const dayEvents = events.filter(event => event.date === dayKey);
+            const cell = document.createElement("div");
+            cell.className = "calendar-cell";
 
-            dayEvents.slice(0, 2).forEach(event => {
-                const eventElement = document.createElement('div');
-                eventElement.className = 'calendar-event';
-                eventElement.textContent = eventLabel(event);
-                cell.appendChild(eventElement);
-            });
-
-            if (dayEvents.length > 2) {
-                const more = document.createElement('div');
-                more.className = 'calendar-event calendar-event--more';
-                more.textContent = `+${dayEvents.length - 2} weitere`;
-                cell.appendChild(more);
+            if (key === data.today) {
+                cell.classList.add("calendar-cell--today");
             }
 
-            if (
-                day === now.getDate() &&
-                month === now.getMonth() &&
-                year === now.getFullYear()
-            ) {
-                cell.classList.add('calendar-day--today');
+            if (holidays[key]) {
+                cell.classList.add("calendar-cell--holiday");
+                cell.title = holidays[key];
+            }
+
+            cell.appendChild(document.createTextNode(String(day)));
+
+            if (dates.has(key)) {
+                const dot = document.createElement("div");
+                dot.className = "calendar-dot";
+                cell.appendChild(dot);
             }
 
             grid.appendChild(cell);
         }
-    };
 
-    const renderWeekView = (events) => {
-        const now = new Date();
-        const start = new Date(now);
-        const dayOffset = (now.getDay() + 6) % 7;
-        start.setDate(now.getDate() - dayOffset);
-        start.setHours(0, 0, 0, 0);
+        body.innerHTML = "";
+        body.appendChild(grid);
 
-        monthLabel.textContent = 'Diese Woche';
-        grid.innerHTML = '';
-        grid.className = 'calendar-week';
-
-        for (let i = 0; i < 7; i += 1) {
-            const day = new Date(start);
-            day.setDate(start.getDate() + i);
-            const dayKey = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
-            const dayEvents = events.filter(event => event.date === dayKey);
-
-            const panel = document.createElement('div');
-            panel.className = 'calendar-week-day';
-
-            const title = document.createElement('h4');
-            title.textContent = day.toLocaleDateString('de-DE', {
-                weekday: 'short',
-                day: '2-digit',
-                month: '2-digit'
+        if (range) {
+            range.textContent = now.toLocaleDateString("de-DE", {
+                month: "long",
+                year: "numeric"
             });
-            panel.appendChild(title);
-
-            if (dayEvents.length === 0) {
-                const noEvents = document.createElement('div');
-                noEvents.className = 'calendar-event';
-                noEvents.textContent = 'Kein Termin';
-                panel.appendChild(noEvents);
-            } else {
-                dayEvents.forEach(event => {
-                    const eventElement = document.createElement('div');
-                    eventElement.className = 'calendar-event';
-                    eventElement.textContent = eventLabel(event);
-                    panel.appendChild(eventElement);
-                });
-            }
-
-            grid.appendChild(panel);
         }
     };
 
-    const loadCalendar = async () => {
+    const load = async () => {
         try {
-            const response = await fetch('api/calendar.php');
+            const response = await fetch("api/calendar.php");
+
             if (!response.ok) {
-                throw new Error('Calendar request failed');
-            }
-
-            const data = await response.json();
-            const events = Array.isArray(data.events) ? data.events : [];
-
-            if (events.length === 0) {
-                showEmptyState('Keine Termine gefunden.');
-            } else {
-                hideEmptyState();
-            }
-
-            if (data.view === 'week') {
-                renderWeekView(events);
+                showMessage("Kalender nicht erreichbar.");
                 return;
             }
 
-            renderMonthView(events);
+            const data = await response.json();
+
+            if (data.view === "month") {
+                renderMonth(data);
+                return;
+            }
+
+            renderAgenda(data);
+
         } catch (error) {
-            showEmptyState('Kalender konnte nicht geladen werden.');
+            showMessage("Kalender konnte nicht geladen werden.");
         }
     };
 
-    loadCalendar();
-});
+    load();
+
+    // Stuendlich reicht: Termine aendern sich nur ueber den Adminbereich,
+    // und der stoesst ohnehin ein Neuladen des Spiegels an.
+    setInterval(load, 3600000);
+
+})();

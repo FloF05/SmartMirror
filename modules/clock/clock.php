@@ -1,19 +1,13 @@
 <div class="clock-module">
 
+    <div id="clock-time" class="clock-time">--:--</div>
 
-    <div id="clock-time">
-        --:--
+    <div class="clock-below">
+        <div id="clock-date" class="clock-date">--</div>
+        <div class="clock-meta">
+            <span id="clock-greeting"></span>
+            <span id="clock-week" class="dim"></span>
+        </div>
     </div>
-
-
-    <div id="clock-date">
-        --
-    </div>
-
-
-    <div id="clock-greeting">
-        --
-    </div>
-
 
 </div>

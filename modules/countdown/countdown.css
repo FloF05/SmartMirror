@@ -1,0 +1,27 @@
+.countdown-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 46px;
+}
+
+.countdown-item {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.countdown-days {
+    font-size: var(--size-large);
+    font-weight: 200;
+    font-variant-numeric: tabular-nums;
+}
+
+.countdown-label {
+    font-size: var(--size-small);
+    color: var(--text-soft);
+}
+
+.countdown-empty {
+    font-size: var(--size-small);
+    color: var(--text-dim);
+}

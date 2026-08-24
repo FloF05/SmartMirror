@@ -1,0 +1,19 @@
+.quote-text {
+    font-size: var(--size-body);
+    font-style: italic;
+    font-weight: 300;
+    color: var(--text-soft);
+    line-height: 1.45;
+}
+
+.quote-text::before {
+    content: "\201E";
+}
+
+.quote-text::after {
+    content: "\201C";
+}
+
+.quote-text:empty {
+    display: none;
+}

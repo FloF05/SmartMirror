@@ -1,33 +1,39 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const cpuValue = document.querySelector('[data-info="cpu"]');
-    const memoryValue = document.querySelector('[data-info="memory"]');
-    const uptimeValue = document.querySelector('[data-info="uptime"]');
-    const hostnameValue = document.querySelector('[data-info="hostname"]');
+(() => {
 
-    if (!cpuValue || !memoryValue || !uptimeValue || !hostnameValue) {
+    const fields = ["hostname", "cpu", "memory", "uptime"];
+
+    const nodes = {};
+
+    fields.forEach(name => {
+        nodes[name] = document.querySelector('[data-info="' + name + '"]');
+    });
+
+    if (!nodes.hostname) {
         return;
     }
 
-    const updateInfo = async () => {
+    const load = async () => {
         try {
-            const response = await fetch('api/system_info.php');
+            const response = await fetch("api/system_info.php");
+
             if (!response.ok) {
-                throw new Error('Request failed');
+                return;
             }
 
             const data = await response.json();
-            cpuValue.textContent = data.cpu || '--';
-            memoryValue.textContent = data.memory || '--';
-            uptimeValue.textContent = data.uptime || '--';
-            hostnameValue.textContent = data.hostname || '--';
+
+            fields.forEach(name => {
+                if (nodes[name]) {
+                    nodes[name].textContent = data[name] || "--";
+                }
+            });
+
         } catch (error) {
-            cpuValue.textContent = '--';
-            memoryValue.textContent = '--';
-            uptimeValue.textContent = '--';
-            hostnameValue.textContent = '--';
+            // Stille ist hier richtig - die Systeminfo ist Beiwerk
         }
     };
 
-    updateInfo();
-    setInterval(updateInfo, 30000);
-});
+    load();
+    setInterval(load, 60000);
+
+})();

@@ -105,6 +105,16 @@ function loadSettings(bool $fresh = false): array
         );
 
         if (is_array($decoded)) {
+
+            // Einmalige Anpassung: Eine settings.json aus der Zeit vor den
+            // neuen Modulen kennt deren Namen nicht. Ihre Modulliste würde
+            // Countdown, Listen, Nachrichten und Zitat dauerhaft ausblenden,
+            // obwohl sie nie bewusst abgeschaltet wurden. In dem Fall gilt
+            // einmalig wieder die Standardliste.
+            if (!array_key_exists("countdown", $decoded)) {
+                unset($decoded["modules"]);
+            }
+
             $settings = mergeSettings($defaults, $decoded);
         }
     }
@@ -124,6 +134,12 @@ function loadSettings(bool $fresh = false): array
         fn(string $module): bool => in_array($module, $active, true)
     ));
 
+
+    // Die frühere Wochenansicht gibt es nicht mehr. Ohne diese Zeile stünde
+    // im Adminbereich ein Wert, den das Auswahlfeld gar nicht kennt.
+    if (!in_array($settings["calendar"]["view"] ?? "", ["agenda", "month"], true)) {
+        $settings["calendar"]["view"] = "agenda";
+    }
     if (!empty($settings["timezone"])) {
         date_default_timezone_set($settings["timezone"]);
     }

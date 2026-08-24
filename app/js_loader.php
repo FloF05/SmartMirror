@@ -1,18 +1,25 @@
 <?php
 
-// Gibt die Einstellungen einmal als window.mirrorConfig aus und lädt
-// danach die JavaScript-Dateien der aktiven Module. clock.js und
-// slideshow.js lesen ihre Werte von dort.
+// Gibt die Einstellungen einmal als window.mirrorConfig aus und lädt danach
+// die JavaScript-Dateien der aktiven Module. Module ohne eigenes Skript -
+// etwa die serverseitig gerenderte Liste - werden übersprungen.
 function loadModuleJS(array $modules, array $settings): void
 {
+    // Nur weitergeben, was der Browser wirklich braucht. Der API-Key und
+    // andere Serverdetails haben im Quelltext der Seite nichts zu suchen.
     $clientConfig = [
         "clock"     => $settings["clock"],
         "slideshow" => $settings["slideshow"],
-        "calendar"  => $settings["calendar"]
+        "calendar"  => ["view" => $settings["calendar"]["view"]],
+        "countdown" => $settings["countdown"],
+        "quote"     => $settings["quote"]
     ];
 
     echo '<script>window.mirrorConfig = '
-        . json_encode($clientConfig, JSON_UNESCAPED_UNICODE)
+        . json_encode(
+            $clientConfig,
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE
+        )
         . ';</script>' . PHP_EOL;
 
     foreach ($modules as $module) {

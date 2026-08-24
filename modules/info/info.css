@@ -1,44 +1,15 @@
-.info-module {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 20px;
-    box-sizing: border-box;
-    height: 100%;
-}
-
-.info-module h2 {
-    margin: 0;
-    font-size: 1.6rem;
-}
-
-.info-list {
-    display: grid;
-    gap: 8px;
-    font-size: 1rem;
-}
-
 .info-row {
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
     gap: 12px;
-    opacity: 0.9;
+    align-items: baseline;
+
+    font-size: var(--size-label);
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
 }
 
-.info-label {
-    font-weight: bold;
-}
-
-.info-value {
-    text-align: right;
-}
-
-@media (orientation: portrait) {
-    .info-module {
-        padding: 24px;
-    }
-
-    .info-list {
-        font-size: 1.1rem;
-    }
+.info-sep {
+    opacity: 0.5;
 }
