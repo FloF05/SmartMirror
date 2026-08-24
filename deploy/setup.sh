@@ -90,9 +90,10 @@ if [[ "$KIOSK" != "no" ]]; then
     ok "Architektur: $ARCH"
 
     if [[ "$ARCH" == "armv6l" && "$KIOSK" == "auto" ]]; then
-        warn "ARMv6 erkannt - für diese CPU gibt es kein Chromium."
-        warn "Der Kiosk-Teil wird übersprungen, der Server läuft trotzdem."
-        warn "Welcher Browser hier läuft, klärt:  deploy/probe.sh"
+        warn "ARMv6 erkannt. Chromium ist zwar paketiert, laeuft auf dieser"
+        warn "CPU aber erfahrungsgemaess nicht brauchbar - uebersprungen."
+        warn "Der Server laeuft davon unberuehrt weiter."
+        warn "Alternativen zeigt deploy/probe.sh, erzwingen mit KIOSK=yes."
         KIOSK="no"
     else
         # Der Paketname unterscheidet sich je nach OS-Version.
