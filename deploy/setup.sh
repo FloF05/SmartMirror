@@ -195,6 +195,19 @@ fi
 
 info "Nginx konfigurieren"
 
+# /var/log wird weiter unten als tmpfs eingerichtet und ist nach jedem
+# Neustart leer. Dienste mit eigenem Log-Unterverzeichnis finden es dann
+# nicht mehr und starten nicht - nginx ist genau so ein Fall.
+# systemd-tmpfiles legt die Verzeichnisse beim Booten wieder an, und zwar
+# vor den Diensten.
+cat > /etc/tmpfiles.d/smartmirror-logs.conf <<'TMPFILES'
+d /var/log/nginx 0755 root adm -
+d /var/log/apt   0755 root root -
+TMPFILES
+
+mkdir -p /var/log/nginx
+systemd-tmpfiles --create /etc/tmpfiles.d/smartmirror-logs.conf >/dev/null 2>&1 || true
+
 sed -e "s|__PHP_SOCKET__|${PHP_SOCKET}|g" \
     -e "s|__PROJECT_DIR__|${PROJECT_DIR}|g" \
     "$PROJECT_DIR/deploy/nginx-smartmirror.conf" \

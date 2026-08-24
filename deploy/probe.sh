@@ -20,7 +20,7 @@ check_pkg() {
     local candidate
 
     candidate="$(apt-cache policy "$pkg" 2>/dev/null \
-        | awk -F': *' '/Candidate:/ {print $2}')"
+        | awk '/Candidate:/ {sub(/^[[:space:]]*Candidate:[[:space:]]*/, ""); print}')"
 
     if [[ -z "$candidate" || "$candidate" == "(none)" ]]; then
         printf "  %-28s ---\n" "$pkg"
@@ -78,9 +78,15 @@ fi
 printf "  %-28s %s\n" "Framebuffer" "$(ls /dev/fb* 2>/dev/null | tr '\n' ' ' || echo 'keiner')"
 
 line "Webserver"
-printf "  %-28s %s\n" "nginx" "$(systemctl is-active nginx 2>/dev/null || echo 'inaktiv')"
-printf "  %-28s %s\n" "php-fpm" "$(systemctl is-active "php$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;' 2>/dev/null)-fpm" 2>/dev/null || echo 'inaktiv')"
-printf "  %-28s %s\n" "Seite erreichbar" "$(curl -s -o /dev/null -w '%{http_code}' http://localhost/ 2>/dev/null || echo 'nein')"
+printf "  %-28s %s\n" "nginx" "$(systemctl is-active nginx 2>/dev/null || true)"
+printf "  %-28s %s\n" "php-fpm" "$(systemctl is-active "php$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;' 2>/dev/null)-fpm" 2>/dev/null || true)"
+printf "  %-28s %s\n" "HTTP-Code /" "$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://localhost/ 2>/dev/null || true)"
+printf "  %-28s %s\n" "/var/log/nginx" "$([[ -d /var/log/nginx ]] && echo vorhanden || echo FEHLT)"
+
+if [[ "$(systemctl is-active nginx 2>/dev/null || true)" != "active" ]]; then
+    line "nginx startet nicht - Details"
+    systemctl status nginx --no-pager -l 2>&1 | tail -20 || true
+fi
 
 printf "\n\033[1;34m== Fertig\033[0m\n"
 echo "  Die komplette Ausgabe kopieren - daraus ergibt sich der Kiosk-Modus."
