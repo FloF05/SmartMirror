@@ -5,6 +5,11 @@ require __DIR__ . "/app/module_loader.php";
 require __DIR__ . "/app/css_loader.php";
 require __DIR__ . "/app/js_loader.php";
 
+// Die Seite selbst nicht zwischenspeichern lassen. Sie verweist auf
+// versionierte CSS- und JS-Dateien - liefert der Browser eine alte
+// Fassung der Seite aus, greifen auch die alten Versionsnummern.
+header("Cache-Control: no-store, must-revalidate");
+
 $settings = loadSettings();
 $modules  = $settings["modules"];
 
@@ -29,7 +34,7 @@ if (in_array("clock", $modules, true)) {
 
 <title><?= htmlspecialchars($settings["name"]) ?></title>
 
-<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="<?= assetUrl("css/layout.css") ?>">
 
 <?php loadModuleCSS($modules); ?>
 

@@ -27,7 +27,7 @@ function loadModuleJS(array $modules, array $settings): void
         $path = "modules/$module/$module.js";
 
         if (is_file(mirrorRoot() . "/" . $path)) {
-            echo '<script src="' . $path . '"></script>' . PHP_EOL;
+            echo '<script src="' . assetUrl($path) . '"></script>' . PHP_EOL;
         }
     }
 }

@@ -14,13 +14,20 @@ $weather  = $settings["weather"];
 $cacheFile     = weatherCacheFile();
 $cacheDuration = 900;
 
-// Frischer Cache? Dann gar nicht erst ins Netz.
-if (
-    is_file($cacheFile)
-    && (time() - filemtime($cacheFile)) < $cacheDuration
-) {
-    echo file_get_contents($cacheFile);
-    exit;
+// Aufbau der Antwort. Aendert sich das Format, wird ein alter Cache
+// ungueltig - sonst liefert der Spiegel nach einem Update tagelang Daten,
+// mit denen das neue Modul nichts anfangen kann.
+$cacheVersion = 2;
+
+// Frischer Cache im passenden Format? Dann gar nicht erst ins Netz.
+if (is_file($cacheFile) && (time() - filemtime($cacheFile)) < $cacheDuration) {
+
+    $cached = json_decode((string) file_get_contents($cacheFile), true);
+
+    if (is_array($cached) && ($cached["v"] ?? 0) === $cacheVersion) {
+        echo file_get_contents($cacheFile);
+        exit;
+    }
 }
 
 function respondError(string $message): never
@@ -53,7 +60,7 @@ function fetchJson(string $url): ?array
     $ch = curl_init($url);
 
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 8);
 
     $response = curl_exec($ch);
     $code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -145,7 +152,8 @@ $result = [
         "humidity"    => (int) ($current["main"]["humidity"] ?? 0),
         "wind"        => round((float) ($current["wind"]["speed"] ?? 0), 1)
     ],
-    "updated" => time()
+    "updated" => time(),
+    "v"       => $cacheVersion
 ];
 
 // --- Sonnenzeiten ----------------------------------------------------------
