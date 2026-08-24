@@ -43,14 +43,26 @@ ok "Benutzer: $TARGET_USER (UID $TARGET_UID)"
 # Auf einem 512-MB-Pi scheitert systemctl gelegentlich am Speicher. Das
 # Skript kommt damit klar - die Dienste sind über ihre Unit-Dateien trotzdem
 # aktiviert und starten spätestens beim nächsten Booten.
-SYSTEMCTL_OK=yes
-
-if ! systemctl is-system-running >/dev/null 2>&1; then
-    if ! systemctl --version >/dev/null 2>&1; then
-        SYSTEMCTL_OK=no
-        warn "systemctl antwortet nicht - Dienste starten erst nach dem Neustart."
-    fi
+if ! systemctl --version >/dev/null 2>&1; then
+    warn "systemctl antwortet nicht - Dienste starten erst nach dem Neustart."
 fi
+
+# /var/log wird weiter unten als tmpfs eingerichtet und ist nach jedem
+# Neustart leer. Dienste mit eigenem Log-Unterverzeichnis finden es dann
+# nicht mehr und starten nicht - nginx ist genau so ein Fall: ohne
+# /var/log/nginx scheitert schon "nginx -t".
+#
+# systemd-tmpfiles legt die Verzeichnisse beim Booten wieder an, und zwar
+# vor den Diensten. Muss ganz am Anfang stehen, damit alles Folgende
+# darauf bauen kann.
+cat > /etc/tmpfiles.d/smartmirror-logs.conf <<'TMPFILES'
+d /var/log/nginx 0755 root adm -
+d /var/log/apt   0755 root root -
+TMPFILES
+
+mkdir -p /var/log/nginx /var/log/apt
+systemd-tmpfiles --create /etc/tmpfiles.d/smartmirror-logs.conf >/dev/null 2>&1 || true
+ok "Log-Verzeichnisse vorhanden"
 
 # --- 1. System und Pakete --------------------------------------------------
 
@@ -195,18 +207,6 @@ fi
 
 info "Nginx konfigurieren"
 
-# /var/log wird weiter unten als tmpfs eingerichtet und ist nach jedem
-# Neustart leer. Dienste mit eigenem Log-Unterverzeichnis finden es dann
-# nicht mehr und starten nicht - nginx ist genau so ein Fall.
-# systemd-tmpfiles legt die Verzeichnisse beim Booten wieder an, und zwar
-# vor den Diensten.
-cat > /etc/tmpfiles.d/smartmirror-logs.conf <<'TMPFILES'
-d /var/log/nginx 0755 root adm -
-d /var/log/apt   0755 root root -
-TMPFILES
-
-mkdir -p /var/log/nginx
-systemd-tmpfiles --create /etc/tmpfiles.d/smartmirror-logs.conf >/dev/null 2>&1 || true
 
 sed -e "s|__PHP_SOCKET__|${PHP_SOCKET}|g" \
     -e "s|__PROJECT_DIR__|${PROJECT_DIR}|g" \
@@ -219,8 +219,14 @@ rm -f /etc/nginx/sites-enabled/default
 nginx -t >/dev/null 2>&1 || { nginx -t; fail "Nginx-Konfiguration fehlerhaft."; }
 
 systemctl enable nginx >/dev/null 2>&1 || true
-systemctl restart nginx
-ok "Nginx läuft"
+
+if systemctl restart nginx >/dev/null 2>&1; then
+    ok "Nginx läuft"
+else
+    echo
+    systemctl status nginx --no-pager -l 2>&1 | tail -15 || true
+    fail "Nginx startet nicht - Ausgabe siehe oben."
+fi
 
 # --- 6. Kiosk-Dienst -------------------------------------------------------
 
@@ -262,8 +268,8 @@ info "SD-Karte schonen"
 
 # Swap auf der SD-Karte ist der schnellste Weg, sie kaputtzuschreiben.
 # Ersatz ist zram: komprimierter Swap im RAM. Das schont die Karte genauso,
-# lässt dem Pi Zero 2 W mit seinen 512 MB aber Luft, bevor der Kernel
-# anfängt, Chromium abzuschießen.
+# lässt dem Pi mit seinen 512 MB aber Luft, bevor der Kernel
+# anfängt, Prozesse abzuschießen.
 if unit_installed dphys-swapfile; then
     dphys-swapfile swapoff >/dev/null 2>&1 || true
     dphys-swapfile uninstall >/dev/null 2>&1 || true
@@ -335,8 +341,6 @@ for cmdline in /boot/firmware/cmdline.txt /boot/cmdline.txt; do
         break
     fi
 done
-
-# --- Abschluss -------------------------------------------------------------
 
 # --- Funktionstest ---------------------------------------------------------
 
