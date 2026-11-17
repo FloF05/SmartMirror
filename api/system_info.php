@@ -55,7 +55,32 @@ function getHostnameValue(): string {
     return php_uname('n') ?: 'unbekannt';
 }
 
+// Die Adresse im Heimnetz - damit man vom Handy aus die Verwaltung findet,
+// auch wo "mirror.local" nicht funktioniert (viele Android-Geräte).
+//
+// Ein UDP-"connect" verschickt nichts, lässt das System aber die Route
+// wählen. Die lokale Seite dieser Verbindung ist genau die Adresse, unter
+// der der Pi im Netz erreichbar ist. 192.0.2.1 ist eine reine
+// Dokumentationsadresse, dorthin geht nie ein Paket.
+function getAddress(): string {
+    $socket = @stream_socket_client('udp://192.0.2.1:9', $errno, $errstr, 1);
+
+    if ($socket === false) {
+        return '';
+    }
+
+    $local = (string) stream_socket_get_name($socket, false);
+    fclose($socket);
+
+    $address = preg_replace('/:\d+$/', '', $local);
+
+    return filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) && $address !== '127.0.0.1'
+        ? $address
+        : '';
+}
+
 echo json_encode([
+    'address' => getAddress(),
     'cpu' => getCpu(),
     'memory' => getMemory(),
     'uptime' => getUptime(),

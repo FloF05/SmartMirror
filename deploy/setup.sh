@@ -202,6 +202,21 @@ unit_installed "$PHP_SERVICE" \
 systemctl enable --now "$PHP_SERVICE" >/dev/null 2>&1 || true
 ok "PHP $PHP_VERSION erkannt, Socket: $PHP_SOCKET"
 
+# PHP nimmt von Haus aus nur 2 MB pro Datei an - ein Handyfoto hat 3 bis
+# 10 MB. Die Verwaltung verkleinert Fotos zwar schon im Browser, das hier
+# ist die Absicherung, falls ein Browser das nicht kann.
+PHP_UPLOAD_INI="/etc/php/${PHP_VERSION}/fpm/conf.d/99-smartmirror.ini"
+
+if [[ -d "$(dirname "$PHP_UPLOAD_INI")" ]]; then
+    cat > "$PHP_UPLOAD_INI" <<'PHPINI'
+; SmartMirror (deploy/setup.sh): Fotos direkt vom Handy annehmen
+upload_max_filesize = 20M
+post_max_size = 24M
+PHPINI
+    systemctl restart "$PHP_SERVICE" >/dev/null 2>&1 || true
+    ok "Uploads bis 20 MB erlaubt"
+fi
+
 # --- 3. Verzeichnisse und Rechte -------------------------------------------
 
 info "Verzeichnisse anlegen"

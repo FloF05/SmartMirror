@@ -1,6 +1,6 @@
 (() => {
 
-    const fields = ["hostname", "cpu", "memory", "uptime"];
+    const fields = ["hostname", "address", "cpu", "memory", "uptime"];
 
     const nodes = {};
 

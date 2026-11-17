@@ -2,6 +2,8 @@
     <div class="info-row">
         <span data-info="hostname">--</span>
         <span class="info-sep">·</span>
+        <span data-info="address">--</span>
+        <span class="info-sep">·</span>
         <span data-info="cpu">--</span>
         <span class="info-sep">·</span>
         <span data-info="memory">--</span>

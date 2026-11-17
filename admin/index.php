@@ -26,8 +26,8 @@ if (is_dir(uploadsDirectory())) {
 sort($images);
 
 $successMessages = [
-    "settings" => "Einstellungen gespeichert. Der Spiegel lädt sich in wenigen Sekunden neu.",
-    "upload"   => "Bild hochgeladen.",
+    "settings" => "Gespeichert. Der Spiegel zeigt die Änderung in wenigen Sekunden.",
+    "upload"   => "Hochgeladen. Der Spiegel zeigt die Bilder in wenigen Sekunden.",
     "delete"   => "Bild gelöscht."
 ];
 
@@ -43,11 +43,29 @@ $errorMessages = [
 $success = $successMessages[$_GET["success"] ?? ""] ?? null;
 $error   = $errorMessages[$_GET["error"] ?? ""] ?? null;
 
+// Beim Hochladen mehrerer Bilder: wie viele davon gescheitert sind
+$failedUploads = (int) ($_GET["failed"] ?? 0);
+
+if (($_GET["error"] ?? "") === "upload" && $failedUploads > 0) {
+    $error = $failedUploads === 1
+        ? "Ein Bild konnte nicht hochgeladen werden. Die übrigen sind angekommen."
+        : "$failedUploads Bilder konnten nicht hochgeladen werden. Die übrigen sind angekommen.";
+}
+
+// Countdown-Zeilen ohne erkennbares Datum werden nicht übernommen - das
+// soll nicht still passieren.
+$skippedCountdown = (int) ($_GET["skipped"] ?? 0);
+
 $calendarImported = is_file(calendarFile());
 
-// Countdown-Einträge als bearbeitbarer Text: eine Zeile je Eintrag
+// Countdown-Einträge als bearbeitbarer Text: eine Zeile je Eintrag, das
+// Datum deutsch geschrieben - so tippt man es auch auf dem Handy.
 $countdownText = implode("\n", array_map(
-    fn(array $item): string => $item["date"] . " | " . $item["label"],
+    function (array $item): string {
+        $date = DateTimeImmutable::createFromFormat("!Y-m-d", $item["date"]);
+
+        return ($date ? $date->format("d.m.Y") : $item["date"]) . " " . $item["label"];
+    },
     $settings["countdown"]["items"] ?? []
 ));
 
@@ -79,6 +97,14 @@ $isActive = fn(string $module): bool
 
 <?php if ($error !== null): ?>
     <p class="error"><?= htmlspecialchars($error) ?></p>
+<?php endif; ?>
+
+<?php if ($skippedCountdown > 0): ?>
+    <p class="notice">
+        <?= $skippedCountdown === 1 ? "Eine Countdown-Zeile wurde" : "$skippedCountdown Countdown-Zeilen wurden" ?>
+        nicht übernommen, weil kein gültiges Datum davorstand.
+        Richtig ist zum Beispiel: <code>24.12.2026 Weihnachten</code>
+    </p>
 <?php endif; ?>
 
 
@@ -222,11 +248,11 @@ $isActive = fn(string $module): bool
 
 
     <h2>Countdown</h2>
-    <p class="hint">Eine Zeile je Eintrag im Format <code>JJJJ-MM-TT | Beschriftung</code></p>
+    <p class="hint">Eine Zeile je Eintrag: erst das Datum, dann die Beschriftung, zum Beispiel <code>24.12.2026 Weihnachten</code></p>
 
     <div class="field-group">
         <textarea name="countdown_items" rows="4"
-                  placeholder="2026-12-24 | Weihnachten"><?= htmlspecialchars($countdownText) ?></textarea>
+                  placeholder="24.12.2026 Weihnachten"><?= htmlspecialchars($countdownText) ?></textarea>
     </div>
 
 
@@ -281,17 +307,109 @@ $isActive = fn(string $module): bool
     </div>
 
 
-    <button type="submit">Einstellungen speichern</button>
+    <div class="save-bar">
+        <button type="submit">Einstellungen speichern</button>
+    </div>
 
 </form>
 
 
-<h2>Bild hochladen</h2>
+<h2>Bilder hochladen</h2>
+<p class="hint">Mehrere Fotos auf einmal auswählen geht auch. Sie werden vor dem Hochladen verkleinert – das geht schneller und schont den Spiegel. Querformat füllt die Diashow am besten aus.</p>
 
-<form method="POST" action="upload.php" enctype="multipart/form-data">
-    <input type="file" name="image" accept=".jpg,.jpeg,.png,.webp" required>
+<form id="upload-form" method="POST" action="upload.php" enctype="multipart/form-data">
+    <input type="file" id="upload-input" name="image" accept="image/*" multiple required>
     <button type="submit">Hochladen</button>
+    <p id="upload-status" class="hint" aria-live="polite"></p>
 </form>
+
+<script>
+(() => {
+    const form = document.getElementById("upload-form");
+    const input = document.getElementById("upload-input");
+    const status = document.getElementById("upload-status");
+
+    // Längste Seite in Pixeln. Größer ist die Diashow auf dem Spiegel nicht -
+    // ein Foto mit 12 Megapixeln belegt beim Anzeigen dagegen rund 48 MB
+    // Arbeitsspeicher, bei 512 MB im Pi Zero viel zu viel.
+    const MAX_EDGE = 1600;
+
+    // Ohne diese Fähigkeiten bleibt es beim normalen Formular
+    if (!form || !window.fetch || !window.FormData || !HTMLCanvasElement.prototype.toBlob) {
+        return;
+    }
+
+    const loadImage = file => new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const image = new Image();
+
+        image.onload = () => { URL.revokeObjectURL(url); resolve(image); };
+        image.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Bild nicht lesbar")); };
+        image.src = url;
+    });
+
+    // Aktuelle Browser zeichnen Handyfotos schon richtig herum (die Drehung
+    // steht bei Handyfotos nur als Vermerk in der Datei). Das neue JPEG
+    // trägt die Drehung deshalb direkt in den Pixeln.
+    const shrink = async file => {
+        const image = await loadImage(file);
+        const scale = Math.min(1, MAX_EDGE / Math.max(image.naturalWidth, image.naturalHeight));
+
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+        const context = canvas.getContext("2d");
+        context.fillStyle = "#000";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+        return new Promise((resolve, reject) => {
+            canvas.toBlob(
+                blob => blob ? resolve(blob) : reject(new Error("Umwandlung fehlgeschlagen")),
+                "image/jpeg",
+                0.85
+            );
+        });
+    };
+
+    form.addEventListener("submit", async event => {
+        const files = Array.from(input.files || []);
+
+        if (files.length === 0) {
+            return;
+        }
+
+        event.preventDefault();
+        form.querySelector("button").disabled = true;
+
+        let failed = 0;
+
+        for (let i = 0; i < files.length; i += 1) {
+            status.textContent = files.length === 1
+                ? "Wird hochgeladen …"
+                : "Bild " + (i + 1) + " von " + files.length + " wird hochgeladen …";
+
+            try {
+                const data = new FormData();
+                data.append("image", await shrink(files[i]), "foto.jpg");
+
+                const response = await fetch("upload.php", { method: "POST", body: data });
+
+                if (!response.ok || response.url.includes("error=")) {
+                    failed += 1;
+                }
+            } catch (error) {
+                failed += 1;
+            }
+        }
+
+        window.location.href = failed === 0
+            ? "index.php?success=upload"
+            : "index.php?error=upload&failed=" + failed;
+    });
+})();
+</script>
 
 
 <h2>Vorhandene Bilder (<?= count($images) ?>)</h2>

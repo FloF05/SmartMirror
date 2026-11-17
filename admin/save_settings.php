@@ -138,25 +138,52 @@ if ($upload !== null && ($upload["error"] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_
 
 
 // --- Countdown ------------------------------------------------------------
-// Eingabeformat je Zeile:  2026-12-24 | Weihnachten
+// Eine Zeile je Eintrag, das Datum vorne. Angenommen wird, was man auf dem
+// Handy natürlich tippt:
+//
+//     24.12.2026 Weihnachten
+//     24.12.26 Weihnachten
+//     2026-12-24 | Weihnachten      (das frühere Format)
+//
+// Liefert [Y-m-d, Beschriftung] oder null.
+function parseCountdownLine(string $line): ?array
+{
+    // Vierstellig zuerst und keine Ziffer danach - sonst würde aus
+    // "24.12.2026 Weihnachten" das Jahr 20 mit der Beschriftung "26 ...".
+    if (preg_match('/^(\d{1,2})\.(\d{1,2})\.(\d{4}|\d{2})(?!\d)\s*[|:\-–]?\s*(.+)$/u', $line, $m)) {
+        [$day, $month, $year, $label] = [(int) $m[1], (int) $m[2], (int) $m[3], $m[4]];
+    } elseif (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})\s*[|:\-–]?\s*(.+)$/u', $line, $m)) {
+        [$year, $month, $day, $label] = [(int) $m[1], (int) $m[2], (int) $m[3], $m[4]];
+    } else {
+        return null;
+    }
+
+    if ($year < 100) {
+        $year += 2000;
+    }
+
+    $label = trim($label);
+
+    if ($label === "" || !checkdate($month, $day, $year)) {
+        return null;
+    }
+
+    return [sprintf("%04d-%02d-%02d", $year, $month, $day), $label];
+}
 
 $countdown = [];
+$skipped   = 0;
 
 foreach (postLines("countdown_items", 10) as $line) {
 
-    $parts = array_map("trim", explode("|", $line, 2));
+    $parsed = parseCountdownLine($line);
 
-    if (count($parts) !== 2 || $parts[1] === "") {
+    if ($parsed === null) {
+        $skipped++;
         continue;
     }
 
-    $date = DateTimeImmutable::createFromFormat("Y-m-d", $parts[0]);
-
-    if ($date === false || $date->format("Y-m-d") !== $parts[0]) {
-        continue;
-    }
-
-    $countdown[] = ["date" => $parts[0], "label" => $parts[1]];
+    $countdown[] = ["date" => $parsed[0], "label" => $parsed[1]];
 }
 
 $settings["countdown"]["items"] = $countdown;
@@ -213,5 +240,5 @@ if (is_file($newsCache)) {
     @unlink($newsCache);
 }
 
-header("Location: index.php?success=settings");
+header("Location: index.php?success=settings" . ($skipped > 0 ? "&skipped=" . $skipped : ""));
 exit;
