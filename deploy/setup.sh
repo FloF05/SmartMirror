@@ -149,8 +149,12 @@ if [[ "$KIOSK" != "no" ]]; then
     ok "Architektur: $ARCH"
     ok "Browser:     $KIOSK_BROWSER"
 
+    # WPE WebKit lädt libGLESv2 erst zur Laufzeit nach und zieht das Paket
+    # deshalb nicht als Abhängigkeit mit. Fehlt es, stürzt der
+    # Darstellungsprozess beim ersten Seitenaufbau ab ("Couldn't open
+    # libGLESv2.so.2") - so geschehen auf dem Pi Zero W.
     case "$KIOSK_BROWSER" in
-        cog)      BROWSER_PACKAGES=(cog) ;;
+        cog)      BROWSER_PACKAGES=(cog libgles2 libegl1 libegl-mesa0 libgl1-mesa-dri) ;;
         firefox)  BROWSER_PACKAGES=(firefox-esr cage wlr-randr) ;;
         chromium) BROWSER_PACKAGES=(chromium cage wlr-randr) ;;
     esac
