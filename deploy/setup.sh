@@ -615,7 +615,7 @@ cat <<EOF
     Der erste Start dauert auf dem Pi Zero ein bis zwei Minuten. Prüfen mit:
 
         systemctl status smartmirror-kiosk
-        journalctl -u smartmirror-kiosk -n 50
+        deploy/probe.sh          (zeigt auch die Meldungen des Browsers)
 
     Drehung oder Browser ändern:  sudo nano $KIOSK_CONFIG
     danach:                       sudo systemctl restart smartmirror-kiosk

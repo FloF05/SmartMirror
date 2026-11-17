@@ -277,8 +277,12 @@ den Befehl, mit dem es greift.
 ```bash
 deploy/probe.sh
 systemctl status smartmirror-kiosk
-journalctl -u smartmirror-kiosk -n 50
+journalctl -b | grep -E 'kiosk|cog\[|WPE' | tail -n 40
 ```
+
+Der Browser läuft in einer eigenen Sitzung auf `tty1`. Seine Meldungen
+stehen deshalb **nicht** unter `journalctl -u smartmirror-kiosk` – dort
+sieht man nur Start und Ende des Dienstes.
 
 Häufigste Ursachen:
 
@@ -289,6 +293,11 @@ Häufigste Ursachen:
   erzwingt den Ausgang.
 * **`Illegal instruction`** oder Rückgabewert 132 – der Browser läuft auf
   dieser CPU nicht. Auf Firefox wechseln (siehe Schritt 6).
+* **`Couldn't open libGLESv2.so.2`** – das Paket `libgles2` fehlt.
+  `sudo UPGRADE=no deploy/setup.sh` installiert es nach.
+* **`bwrap: Unexpected capabilities but not setuid`** und cog endet mit
+  `TRAP` – der Browser hat Capabilities geerbt, die `kiosk.sh` eigentlich
+  ablegt. Prüfen, ob `setpriv` vorhanden ist (`command -v setpriv`).
 * **Der Dienst steht auf `failed`** – nach sechs Fehlstarts in zehn Minuten
   gibt systemd auf, damit der Pi nicht in einer Endlosschleife hängt. Ursache
   steht im Journal. Nach der Korrektur:

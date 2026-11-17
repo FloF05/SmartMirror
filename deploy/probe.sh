@@ -106,8 +106,12 @@ printf "  %-28s %s\n" "Dienst aktiviert" "$(systemctl is-enabled smartmirror-kio
 printf "  %-28s %s\n" "Dienst Zustand" "$(systemctl is-active smartmirror-kiosk 2>/dev/null || true)"
 printf "  %-28s %s\n" "Laufende Browser" "$(pgrep -a -f 'cog|WPEWebProcess|firefox-esr|chromium|cage' 2>/dev/null | awk '{print $2}' | xargs -r -n1 basename | sort | uniq -c | xargs || true)"
 if systemctl list-unit-files smartmirror-kiosk.service >/dev/null 2>&1; then
-    echo "  Letzte Meldungen:"
-    journalctl -u smartmirror-kiosk -n 15 --no-pager 2>/dev/null | sed 's/^/    /' || true
+    # Der Browser läuft in einer eigenen Sitzung. Seine Meldungen stehen
+    # deshalb nicht unter "journalctl -u", sondern unter seinem Namen.
+    echo "  Letzte Meldungen seit dem Booten:"
+    journalctl -b --no-pager 2>/dev/null \
+        | grep -E 'smartmirror-kiosk|kiosk\.sh|cog\[|WPE|cage\[|firefox|chromium' \
+        | grep -v pam_unix | tail -n 20 | sed 's/^/    /' || true
 fi
 
 printf "\n\033[1;34m== Fertig\033[0m\n"

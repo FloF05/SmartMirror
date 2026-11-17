@@ -32,6 +32,17 @@ export URL="${URL:-http://localhost/}"
 
 log() { echo "kiosk: $*" >&2; }
 
+# systemd gibt lokalen Sitzungen am Bildschirm seit Version 254 die
+# Capability CAP_WAKE_ALARM mit. WebKit schottet seine Hilfsprozesse mit
+# bwrap ab, und bwrap bricht bei unerwarteten Capabilities ab ("Unexpected
+# capabilities but not setuid") - cog stirbt dann sofort mit SIGTRAP. Also
+# einmal alle Capabilities ablegen, bevor irgendein Browser startet. Dafür
+# sind keine Sonderrechte nötig.
+if [[ -z "${SMARTMIRROR_CAPS_DROPPED:-}" ]] && command -v setpriv >/dev/null 2>&1; then
+    export SMARTMIRROR_CAPS_DROPPED=1
+    exec setpriv --inh-caps=-all --ambient-caps=-all -- "$0" "$@"
+fi
+
 case "$ROTATION" in
     0|90|180|270) ;;
     *)
