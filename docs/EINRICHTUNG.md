@@ -179,9 +179,11 @@ KIOSK_BROWSER=cog
 ROTATION=90
 ```
 
-`ROTATION` kennt `0`, `90`, `180` und `270`. Steht das Bild auf dem Kopf,
-`270` statt `90` nehmen (oder umgekehrt), bei einem Display, das schon von
-sich aus hochkant ist, `0`. Danach:
+`ROTATION` kennt `0`, `90`, `180` und `270`. Für das jetzige Display
+(Querformat-Panel mit 1920 × 1080, hochkant eingebaut) ist `90` richtig –
+am Spiegel bestätigt. Steht das Bild bei einem anderen Display auf dem Kopf,
+`270` nehmen, bei einem Display, das schon von sich aus hochkant ist, `0`.
+Danach:
 
 ```bash
 sudo systemctl restart smartmirror-kiosk
@@ -207,24 +209,16 @@ sudo reboot
 
 ## Schritt 7 – Inhalte einrichten
 
-Im Browser am PC: **<http://mirror.local/admin/>**
-
-Dort lassen sich einstellen:
-
-* welche Module angezeigt werden
-* Uhrformat, Sekundenanzeige, Kalenderwoche
-* Wetter-Standort
-* Countdown-Termine, Einkaufsliste, Nachrichten-Feed, Zitate
-* Bildwechsel-Intervall der Diashow
-* Kalenderansicht, Bundesland für Feiertage und ICS-Import
-* Bilder hochladen und löschen
+Alles Weitere geht vom Handy aus über **<http://mirror.local/admin/>** –
+Module, Wetter-Standort, Bundesland, Kalender, Countdown, Liste, Fotos.
+Die Schritt-für-Schritt-Anleitung dafür steht in **[Bedienung](BEDIENUNG.md)**.
 
 Jede Änderung lädt den Spiegel innerhalb von zehn Sekunden von selbst neu –
 niemand muss ans Display.
 
 > Die Bilder aus dem alten Aufbau liegen auf dem Windows-PC unter
 > `E:\Projekte\SmartMirror\uploads\`. Sie sind bewusst **nicht** Teil des
-> Repositories und werden hier einfach wieder hochgeladen.
+> Repositories und werden einfach wieder hochgeladen.
 
 ---
 
@@ -321,8 +315,11 @@ systemctl status avahi-daemon
 hostname          # muss "mirror" ausgeben
 ```
 
-Ersatzweise über die IP-Adresse aus dem Router verbinden. PC und Pi müssen
-im selben Netz sein.
+Ersatzweise über die IP-Adresse verbinden. Sie steht auf dem Spiegel in der
+Systeminfo-Zeile ganz unten, sonst im Router bei den verbundenen Geräten.
+PC und Pi müssen im selben Netz sein. Viele Android-Handys können
+`.local`-Namen grundsätzlich nicht auflösen – dort immer die IP-Adresse
+nehmen.
 
 ### Die Webseite zeigt „502 Bad Gateway"
 
@@ -350,10 +347,18 @@ freigeschaltet – das dauert bei OpenWeather bis zu zwei Stunden.
 
 ```bash
 ls -la ~/Projects/SmartMirror/uploads
+cat /etc/php/*/fpm/conf.d/99-smartmirror.ini
 ```
 
 Als Gruppe muss `www-data` eingetragen sein, die Rechte müssen `drwxrwsr-x`
-lauten. Sonst `sudo deploy/setup.sh` erneut ausführen.
+lauten. Die zweite Datei hebt das Upload-Limit von PHP (2 MB) auf 20 MB an.
+Fehlt eines davon, `sudo UPGRADE=no deploy/setup.sh` erneut ausführen.
+
+Normalerweise kommt es auf das Limit gar nicht an: Die Verwaltung
+verkleinert Fotos schon im Browser auf höchstens 1600 Pixel, bevor sie
+hochgeladen werden. Das ist kein Komfort, sondern Absicht – ein
+12-Megapixel-Foto belegt beim Anzeigen rund 48 MB Arbeitsspeicher, ein paar
+davon in der Diashow würden den Pi Zero in die Knie zwingen.
 
 ---
 

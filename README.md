@@ -1,16 +1,20 @@
 # SmartMirror
 
-Webbasierter Smart Mirror auf einem Raspberry Pi Zero W.
+Webbasierter Smart Mirror auf einem Raspberry Pi Zero W, eingestellt
+bequem vom Handy aus.
 
-Ein Nginx mit PHP liefert ein Vollbild-Dashboard aus, das ein Browser im
-Kiosk-Modus auf dem Display anzeigt. Alle Inhalte lassen sich über einen
-Adminbereich im Browser verwalten – der Spiegel lädt sich nach jeder
-Änderung von selbst neu.
+Ein Nginx mit PHP liefert ein Vollbild-Dashboard aus, das ein Browser
+direkt auf dem Display anzeigt. Alle Inhalte lassen sich über eine
+Verwaltungsseite im Browser ändern – der Spiegel lädt sich danach von
+selbst neu.
 
-Auf dem Pi Zero W (ARMv6, ein Kern, 512 MB) zeichnet **cog** – ein
-schlanker Kiosk-Browser auf Basis von WPE WebKit – direkt auf das Display,
-ohne Desktop und ohne Compositor. Chromium braucht ARMv7 und kommt erst ab
-Pi 3 oder Zero 2 W zum Einsatz.
+## Dokumentation
+
+| Dokument | Für wen |
+|---|---|
+| **[Bedienung](docs/BEDIENUNG.md)** | Alle, die den Spiegel vom Handy aus einstellen wollen |
+| **[Einrichtung](docs/EINRICHTUNG.md)** | Neuaufbau des Raspberry Pi, WLAN-Wechsel, Fehlersuche |
+| **[Projektstatus](docs/PROJEKTSTATUS.md)** | Was umgesetzt ist, wie es gebaut ist, was offen ist |
 
 ## Module
 
@@ -20,70 +24,62 @@ Pi 3 oder Zero 2 W zum Einsatz.
 | Wetter | Aktuell, 4-Tage-Vorhersage, Sonnenzeiten, Mondphase, Luftqualität |
 | Countdown | Tage bis zu frei wählbaren Terminen |
 | Termine | Agenda oder Monatsraster aus ICS – mit Serien- und mehrtägigen Terminen und deutschen Feiertagen |
-| Listen | Einkaufs- oder To-do-Liste, im Adminbereich pflegbar |
+| Listen | Einkaufs- oder To-do-Liste |
 | Nachrichten | Schlagzeilen aus einem RSS-Feed |
 | Zitat | Wechselt täglich, ohne Netzwerk |
-| Diashow | Bilder aus `uploads/`, zufällige Reihenfolge |
-| Systeminfo | Host, CPU-Last, RAM, Uptime |
+| Diashow | Hochgeladene Fotos, zufällige Reihenfolge |
+| Systeminfo | Name und Adresse im Netz, CPU-Last, RAM, Laufzeit |
 
-Jedes Modul lässt sich im Adminbereich einzeln abschalten.
-
-## Einrichtung
-
-Vollständige Anleitung für einen neuen Pi: **[SETUP.md](SETUP.md)**
-
-```bash
-git clone https://github.com/FloF05/SmartMirror.git
-cd SmartMirror
-sudo deploy/setup.sh
-```
+Jedes Modul lässt sich einzeln abschalten.
 
 ## Aufbau
 
 ```text
 SmartMirror/
 │
-├── app/          Modul-Lader und zentrale Einstellungsverwaltung
+├── app/          Einstellungen, Modul-Lader, Kalender-Parser, Feiertage
 ├── config/       Standardwerte (config.php) und API-Key (secrets.php)
 ├── modules/      je Modul ein Ordner mit .php, .css und .js
-├── api/          JSON-Endpunkte für Wetter, Kalender, Systeminfo, Refresh
-├── admin/        Weboberfläche zur Verwaltung
+├── api/          JSON-Endpunkte für Wetter, Kalender, Nachrichten, Systeminfo
+├── admin/        Verwaltungsseite
 ├── css/          Layout des Dashboards
 ├── deploy/       Setup, Update, Kiosk-Start, Nginx-Vorlage, Prüfskript
+├── docs/         Bedienung, Einrichtung, Projektstatus
 │
-├── data/         Laufzeitdaten – nicht in Git
-├── uploads/      Bilder – nicht in Git
-└── cache/        Wetter-Cache – nicht in Git
+├── data/         Einstellungen und Kalender – nicht in Git
+├── uploads/      Fotos – nicht in Git
+└── cache/        Wetter, Nachrichten, Kalender – nicht in Git
 ```
 
 Einstellungen kommen aus `config/config.php` (Standardwerte, versioniert) und
-werden von `data/settings.json` überschrieben (im Adminbereich gesetzt).
+werden von `data/settings.json` überschrieben (in der Verwaltung gesetzt).
 Zugriff ausschließlich über `loadSettings()` und `saveSettings()` in
 [app/settings.php](app/settings.php).
 
 ## Entwicklung
 
-Lokal testen – ohne Raspberry Pi:
+Lokal testen, ohne Raspberry Pi:
 
 ```bash
 php -S localhost:8000
 ```
 
-Wetter und Systeminfo bleiben dabei leer: Für das Wetter fehlt die
-PHP-Erweiterung `curl`, für die Systeminfo das `/proc`-Dateisystem.
-Alles andere funktioniert.
+Wetter, Nachrichten und Systeminfo bleiben dabei leer – unter Windows fehlen
+die PHP-Erweiterung `curl` und das `/proc`-Dateisystem. Alles andere
+funktioniert.
 
-Ausrollen auf den Pi:
+Ausrollen: am PC committen und pushen, dann auf dem Pi
 
 ```bash
-deploy/update.sh
+cd ~/Projects/SmartMirror && deploy/update.sh
 ```
-
-Browser und Display-Drehung des Kiosks stehen auf dem Pi in
-`/etc/default/smartmirror-kiosk` – siehe [SETUP.md](SETUP.md), Schritt 6.
 
 ## Technik
 
-Raspberry Pi OS Lite (32 Bit, Trixie) · Nginx · PHP-FPM · cog / WPE WebKit
-direkt auf DRM/KMS (Pi Zero W) oder Chromium in cage (ab ARMv7) ·
-OpenWeather API
+Raspberry Pi Zero W · Raspberry Pi OS Lite 13 „Trixie“ (32 Bit) · Nginx ·
+PHP-FPM 8.4 · cog / WPE WebKit direkt auf DRM/KMS · OpenWeather API
+
+Chromium braucht ARMv7 und läuft auf dem Pi Zero W nicht. cog zeichnet
+ohne Desktop und ohne Compositor direkt auf das Display – der leichteste
+Weg für einen Rechenkern und 512 MB RAM. Ab Pi 3 oder Zero 2 W richtet
+`setup.sh` stattdessen Chromium ein.
