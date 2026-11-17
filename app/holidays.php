@@ -112,27 +112,34 @@ function germanHolidays(int $year, string $state = ""): array
 }
 
 
-// Feiertage ab heute für die nächsten $days Tage.
-function upcomingHolidays(string $state, int $days): array
+// Feiertage zwischen zwei Tagen, beide eingeschlossen - auch über den
+// Jahreswechsel hinweg.
+function holidaysBetween(string $state, DateTimeImmutable $from, DateTimeImmutable $until): array
 {
-    $today = new DateTimeImmutable("today");
-    $until = $today->modify("+{$days} days");
+    $holidays = [];
 
-    $holidays = germanHolidays((int) $today->format("Y"), $state);
-
-    // Über den Jahreswechsel hinaus mitnehmen
-    if ($until->format("Y") !== $today->format("Y")) {
-        $holidays += germanHolidays((int) $until->format("Y"), $state);
-        ksort($holidays);
+    for ($year = (int) $from->format("Y"); $year <= (int) $until->format("Y"); $year++) {
+        $holidays += germanHolidays($year, $state);
     }
+
+    ksort($holidays);
 
     $result = [];
 
     foreach ($holidays as $date => $name) {
-        if ($date >= $today->format("Y-m-d") && $date <= $until->format("Y-m-d")) {
+        if ($date >= $from->format("Y-m-d") && $date <= $until->format("Y-m-d")) {
             $result[$date] = $name;
         }
     }
 
     return $result;
+}
+
+
+// Feiertage ab heute für die nächsten $days Tage.
+function upcomingHolidays(string $state, int $days): array
+{
+    $today = new DateTimeImmutable("today");
+
+    return holidaysBetween($state, $today, $today->modify("+{$days} days"));
 }

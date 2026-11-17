@@ -56,6 +56,13 @@
     text-overflow: ellipsis;
 }
 
+.agenda-until {
+    flex: 0 0 auto;
+    font-size: var(--size-small);
+    color: var(--text-dim);
+    padding-top: 0.15em;
+}
+
 .agenda-entry--holiday .agenda-title {
     color: var(--accent);
 }
