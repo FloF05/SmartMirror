@@ -16,8 +16,21 @@ info() { printf "\n\033[1;34m==>\033[0m %s\n" "$*"; }
 ok()   { printf "    \033[0;32mok\033[0m  %s\n" "$*"; }
 
 info "Änderungen holen"
+BEFORE="$(git rev-parse HEAD)"
 git pull --ff-only
 ok "Stand: $(git log -1 --format='%h %s')"
+
+# Änderungen an der Einrichtung selbst (Kiosk, Nginx, Setup) greifen erst,
+# wenn setup.sh sie installiert - ein git pull allein reicht dafür nicht.
+DEPLOY_CHANGES="$(git diff --name-only "$BEFORE" HEAD -- deploy/ | grep -v -e 'probe.sh$' -e 'update.sh$' || true)"
+
+if [[ -n "$DEPLOY_CHANGES" ]]; then
+    echo
+    echo "    ! Die Einrichtung hat sich geändert:"
+    echo "$DEPLOY_CHANGES" | sed 's/^/        /'
+    echo "      Damit das greift, einmal ausführen:"
+    echo "        sudo UPGRADE=no deploy/setup.sh && sudo reboot"
+fi
 
 info "Schreibordner prüfen"
 # Die Ordner tragen das setgid-Bit aus setup.sh, neue Dateien erben die
@@ -30,7 +43,7 @@ done
 ok "uploads/ data/ cache/ logs/"
 
 info "Spiegel neu laden"
-# Refresh-Version hochzählen: das offene Chromium-Fenster merkt das beim
+# Refresh-Version hochzählen: der Browser auf dem Display merkt das beim
 # nächsten Poll und lädt sich selbst neu - niemand muss ans Display.
 php -r 'require "app/settings.php"; echo "Version " . bumpRefreshVersion() . PHP_EOL;'
 

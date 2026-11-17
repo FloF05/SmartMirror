@@ -1,6 +1,6 @@
 # SmartMirror Projekt Status
 
-Stand: August 2026
+Stand: November 2026
 
 ## Allgemeine Informationen
 
@@ -8,14 +8,17 @@ Stand: August 2026
 SmartMirror
 
 **Ziel:**
-Entwicklung eines webbasierten Smart Mirrors auf einem Raspberry Pi Zero 2 W
-mit einer modularen Architektur.
+Webbasierter Smart Mirror auf einem Raspberry Pi Zero W mit modularer
+Architektur, verwaltet über einen Adminbereich im Browser.
 
 ### Hardware
 
-* Raspberry Pi Zero 2 W
-* Display mit HDMI-Controller, Hochformat
-* Raspberry Pi OS Lite (64 Bit)
+* Raspberry Pi Zero W (BCM2835, ARMv6, ein Kern, 512 MB RAM)
+* Display mit HDMI-Controller, Hochformat (Layout für 900 x 1600)
+* Raspberry Pi OS Lite 13 "Trixie", 32 Bit (armhf), PHP 8.4
+
+Ein 64-Bit-System gibt es für den Pi Zero W nicht. Trixie ist die letzte
+Generation von Raspberry Pi OS, die ARMv6 noch unterstützt.
 
 ### Raspberry Pi
 
@@ -42,7 +45,7 @@ Windows-PC mit Visual Studio Code
 ## Workflow
 
 ```text
-VS Code  ->  git commit  ->  git push  ->  GitHub
+VS Code  ->  git commit  ->  git push  ->  GitHub (privat)
                                             |
                                             v
                                    deploy/update.sh
@@ -52,12 +55,12 @@ VS Code  ->  git commit  ->  git push  ->  GitHub
 ```
 
 GitHub dient gleichzeitig als Remote Repository, Versionsverwaltung und
-Backup der Codebasis.
+Backup der Codebasis. Der Pi greift per SSH-Key darauf zu.
 
 **Repository:**
 
 ```text
-https://github.com/FloF05/SmartMirror.git
+git@github.com:FloF05/SmartMirror.git
 ```
 
 **Branch:** main
@@ -70,11 +73,11 @@ https://github.com/FloF05/SmartMirror.git
 
 **Status:** Abgeschlossen
 
-* [x] Raspberry Pi OS Lite installiert
+* [x] Raspberry Pi OS Lite 32 Bit (Trixie) installiert
 * [x] WLAN eingerichtet
 * [x] SSH aktiviert
+* [x] SSH-Key für das private GitHub-Repository
 * [x] System aktualisiert
-* [x] Grundpakete installiert
 
 ## Kapitel 2 - Webserver
 
@@ -82,88 +85,70 @@ https://github.com/FloF05/SmartMirror.git
 
 * [x] Nginx installiert
 * [x] PHP-FPM eingerichtet
-* [x] Eigene Webseite erreichbar
 * [x] Nginx auf den Projektpfad konfiguriert
 
-Die Nginx-Konfiguration liegt jetzt als Vorlage im Repository unter
+Die Nginx-Konfiguration liegt als Vorlage unter
 `deploy/nginx-smartmirror.conf`. Die PHP-Version wird beim Einrichten
-automatisch erkannt, der Socket-Pfad also nicht mehr von Hand eingetragen.
+automatisch erkannt.
 
 ## Kapitel 3 - Modulare Architektur
 
 **Status:** Abgeschlossen
 
-* [x] Modul-Lader erstellt
-* [x] Konfigurationsdatei erstellt
-* [x] Separate Secrets-Datei eingerichtet
-* [x] Alle fünf Module umgesetzt
+* [x] Modul-Lader
+* [x] Zentrale Einstellungsverwaltung (app/settings.php)
+* [x] Separate Secrets-Datei
+* [x] CSS und JS mit Versionsnummer (?v=<Änderungszeit>), damit der
+      Browser nach einem Update nie alte Dateien aus dem Cache zeigt
 
-## Kapitel 4 - Smart Mirror Layout
-
-**Status:** Abgeschlossen
-
-* [x] CSS Grid Layout erstellt
-* [x] Vollbildansicht umgesetzt
-* [x] Hochformat-Anpassung berücksichtigt
-
-Das Layout arbeitet ohne fest benannte Bereiche, damit sich einzelne Module
-abschalten lassen, ohne dass eine Lücke im Raster entsteht. Die Uhr steht
-über der vollen Breite, alle übrigen Module teilen sich zwei Spalten.
-Bleibt ein Modul allein übrig, füllt es die ganze Zeile.
-
-## Kapitel 5 - Uhr- und Datumsmodul
+## Kapitel 4 - Layout
 
 **Status:** Abgeschlossen
 
-* [x] Digitale Uhr
-* [x] Deutscher Wochentag und deutsches Datumsformat
-* [x] Begrüßung abhängig von der Tageszeit
-* [x] Sekundenanzeige über den Adminbereich schaltbar
-* [x] 12- und 24-Stunden-Format über den Adminbereich wählbar
+* [x] Typografisches Layout ohne gefüllte Flächen - hinter Spiegelglas
+      würden sie milchig glühen
+* [x] Einspaltig im Hochformat (900 x 1600), zweispaltig im Querformat
+* [x] Module einzeln abschaltbar, ohne Lücken im Layout
 
-## Kapitel 6 - Wettermodul
-
-**Status:** Abgeschlossen
-
-* [x] OpenWeather API angebunden
-* [x] API-Key getrennt in config/secrets.php, nicht in Git
-* [x] Cache mit 10 Minuten Laufzeit in cache/weather.json
-* [x] Standort über den Adminbereich änderbar
-
-Bei einem Standortwechsel wird der Cache verworfen, damit die neue Stadt
-sofort erscheint. Fällt das WLAN aus, zeigt der Spiegel die letzten
-bekannten Werte weiter, statt leer zu bleiben.
-
-## Kapitel 7 - Slideshow und Bildverwaltung
+## Kapitel 5 - Module
 
 **Status:** Abgeschlossen
 
-* [x] Bilder aus uploads/, zufällige Reihenfolge
-* [x] JPG, JPEG, PNG und WebP
-* [x] Weicher Übergang, Intervall im Adminbereich einstellbar
-* [x] Upload und Löschen über den Adminbereich
+| Modul | Inhalt |
+|---|---|
+| Uhr | Uhrzeit, deutsches Datum, Begrüßung, Kalenderwoche |
+| Wetter | Aktuell, 4-Tage-Vorhersage, Sonnenzeiten, Mondphase, Luftqualität |
+| Countdown | Tage bis zu frei wählbaren Terminen |
+| Termine | Agenda oder Monatsraster aus ICS, mit Feiertagen |
+| Listen | Einkaufs- oder To-do-Liste |
+| Nachrichten | RSS-Schlagzeilen |
+| Zitat | Zitat des Tages |
+| Diashow | Bilder aus uploads/ |
+| Systeminfo | Host, CPU-Last, RAM, Uptime |
 
-## Kapitel 8 - Kalender und Systeminfo
+## Kapitel 6 - Kalender
 
 **Status:** Abgeschlossen
 
-* [x] Kalendermodul mit Monats- und Wochenansicht
 * [x] ICS-Import über den Adminbereich
-* [x] Importierten Kalender wieder entfernbar
-* [x] Systeminfo-Modul mit Host, CPU-Last, RAM und Uptime
+* [x] Zeilenumbrüche und Escape-Sequenzen nach RFC 5545
+* [x] UTC, TZID (auch Windows-Namen aus Outlook) und lokale Zeit
+* [x] Serientermine (RRULE): täglich, wöchentlich, monatlich, jährlich
+      mit INTERVAL, COUNT, UNTIL, BYDAY, BYMONTHDAY, BYMONTH
+* [x] Ausnahmen (EXDATE) und verschobene Einzeltermine (RECURRENCE-ID)
+* [x] Mehrtägige Termine ("bis Fr 20.11."), laufende stehen unter "Heute"
+* [x] Abgesagte Termine werden ausgeblendet
+* [x] Deutsche Feiertage je Bundesland, lokal berechnet
+* [x] Ergebnis wird zwischengespeichert (cache/calendar.json) - der Pi
+      Zero rechnet Serien nur einmal am Tag oder nach einem Import
 
-Der ICS-Parser setzt umgebrochene Zeilen nach RFC 5545 wieder zusammen und
-löst Escape-Sequenzen auf. Ohne das reißen Exporte aus Google oder Apple
-Kalender mitten im Termintitel ab. Ganztägige und terminierte Ereignisse
-werden unterschieden, Uhrzeiten in UTC in die lokale Zeitzone umgerechnet.
+Der Parser liegt in `app/ics.php`. Serien werden in der Zeitzone ihres
+Starttermins berechnet, damit "jeden Montag 10 Uhr" auch über die
+Zeitumstellung hinweg 10 Uhr bleibt.
 
-## Kapitel 9 - Adminbereich, Kiosk-Modus und Deployment
+## Kapitel 7 - Adminbereich und automatisches Neuladen
 
 **Status:** Abgeschlossen
-
-### Zentrale Einstellungsverwaltung
-
-Alle Einstellungen laufen über `app/settings.php`:
 
 ```text
 config/config.php     Standardwerte, liegen in Git
@@ -175,140 +160,61 @@ data/settings.json    im Adminbereich gesetzte Werte, nur lokal
 loadSettings()        was der Spiegel tatsächlich verwendet
 ```
 
-Geschrieben wird ausschließlich über `saveSettings()`. Die Funktion verwirft
-dabei den Wetter-Cache und zählt die Refresh-Version hoch.
-
-### Im Adminbereich einstellbar
-
-* [x] Module einzeln an- und abschalten
-* [x] Uhrformat und Sekundenanzeige
-* [x] Wetter-Standort
-* [x] Bildwechsel-Intervall der Diashow
-* [x] Kalenderansicht und ICS-Import
-* [x] Bilder hochladen und löschen
-
-### Automatisches Neuladen
-
 Jede Änderung im Adminbereich zählt eine Versionsnummer in
 `data/refresh_state.json` hoch. Der Spiegel fragt sie alle zehn Sekunden ab
-und lädt sich bei einer höheren Nummer selbst neu. Niemand muss ans Display.
+und lädt sich bei einer höheren Nummer selbst neu.
 
-### Kiosk-Modus
+## Kapitel 8 - Anzeige auf dem Display (Kiosk)
 
-* [x] cage als minimaler Wayland-Compositor
-* [x] Chromium im Vollbild ohne Desktop und ohne Mauszeiger
-* [x] Start über systemd beim Booten
-* [x] Wartet, bis der Webserver antwortet
-* [x] Startet nach einem Absturz automatisch neu
-* [x] Display-Drehung über eine Zeile im Dienst einstellbar
+**Status:** Umgesetzt, Test auf dem Pi steht aus
 
-### Deployment
+Chromium ist für den Pi Zero W keine Option: Es ist zwar paketiert, braucht
+aber ARMv7. Die Anzeige übernimmt deshalb **cog**, ein Kiosk-Browser auf
+Basis von WPE WebKit. cog zeichnet über DRM/KMS direkt auf das Display -
+ohne X11, ohne Wayland-Compositor, ohne Desktop. Das ist der leichteste
+Weg, den es für diese Hardware gibt.
+
+```text
+deploy/kiosk.sh                  startet den gewählten Browser
+deploy/smartmirror-kiosk.service systemd-Dienst, eigene Sitzung auf tty1
+/etc/default/smartmirror-kiosk   Browser und Drehung (nicht in Git)
+```
+
+* [x] cog direkt auf DRM/KMS, Drehung über den GLES-Renderer
+* [x] Firefox ESR in cage als Rückfallebene
+* [x] Chromium in cage für ARMv7 und neuer
+* [x] Startet erst, wenn der Webserver antwortet
+* [x] Neustart nach einem Absturz, aber keine Endlosschleife
+* [x] Probelauf in setup.sh prüft, ob WebKit auf der CPU startet
+* [ ] Auf dem echten Pi Zero W getestet
+* [ ] Richtige Drehung (90 oder 270) am Display bestätigt
+
+## Kapitel 9 - Deployment und Dauerbetrieb
+
+**Status:** Abgeschlossen
 
 ```text
 deploy/
 ├── setup.sh                    richtet einen frischen Pi komplett ein
 ├── update.sh                   holt Änderungen und lädt den Spiegel neu
+├── kiosk.sh                    startet den Browser auf dem Display
+├── probe.sh                    liest Hardware, Swap und Kiosk-Status aus
 ├── nginx-smartmirror.conf      Nginx-Vorlage
-└── smartmirror-kiosk.service   systemd-Dienst für den Kiosk
+└── smartmirror-kiosk.service   systemd-Dienst für die Anzeige
 ```
 
-`setup.sh` ist mehrfach ausführbar und ändert nur, was noch nicht stimmt.
-
-### Dauerbetrieb
-
-* [x] Swap von der SD-Karte auf zram verlegt
-* [x] /var/log und /tmp als tmpfs im RAM
+* [x] setup.sh mehrfach ausführbar, ändert nur, was noch nicht stimmt
+* [x] Funktionstest am Ende von setup.sh (Seite, Admin, Wetter, Kalender)
+* [x] Swap nur im RAM: unter Trixie über rpi-swap (Mechanism=zram), unter
+      Bookworm über zram-tools
+* [x] /var/log und /tmp als tmpfs, Log-Verzeichnisse über tmpfiles.d
 * [x] Nginx-Zugriffslog abgeschaltet
 * [x] Bildschirmabschaltung verhindert (consoleblank=0)
 
-Swap auf der SD-Karte ist der schnellste Weg, sie kaputtzuschreiben.
-Komplett abschalten wäre bei 512 MB RAM allerdings riskant, weil der Kernel
-dann anfängt, Chromium abzuschießen. Deshalb zram: komprimierter Swap im
-Arbeitsspeicher.
-
----
-
-# Projektstruktur
-
-```text
-SmartMirror/
-│
-├── app/
-│   ├── settings.php        Einstellungen laden und speichern
-│   ├── module_loader.php
-│   ├── css_loader.php
-│   └── js_loader.php
-│
-├── config/
-│   ├── config.php          Standardwerte
-│   ├── secrets.example.php Vorlage
-│   └── secrets.php         API-Key, nicht in Git
-│
-├── modules/
-│   ├── clock/
-│   ├── weather/
-│   ├── slideshow/
-│   ├── calendar/
-│   └── info/
-│
-├── api/
-│   ├── weather.php
-│   ├── calendar.php
-│   ├── system_info.php
-│   └── refresh_state.php
-│
-├── admin/
-│   ├── index.php
-│   ├── save_settings.php
-│   ├── upload.php
-│   ├── delete.php
-│   └── style.css
-│
-├── deploy/
-├── css/
-│
-├── data/       nicht in Git   settings.json, calendar.ics, refresh_state.json
-├── uploads/    nicht in Git   Bilder
-├── cache/      nicht in Git   weather.json
-└── logs/       nicht in Git
-```
-
----
-
-# Technische Architektur
-
-```text
-Display
-    ^
-    |
-Chromium im Kiosk-Modus (cage / Wayland)
-    |
-    v
-Nginx  ->  PHP-FPM  ->  PHP
-                          |
-                          ├── Module
-                          ├── API
-                          ├── Adminbereich
-                          ├── data/     Einstellungen
-                          ├── cache/    Wetter
-                          └── uploads/  Bilder
-```
-
----
-
-# Verwendete Technologien
-
-**Backend:** PHP, PHP-FPM
-**Frontend:** HTML, CSS, JavaScript
-**Webserver:** Nginx
-**Anzeige:** Chromium im Kiosk-Modus über cage (Wayland)
-**Wetterdaten:** OpenWeather API
-**Versionsverwaltung:** Git, GitHub
-**Entwicklung:** Visual Studio Code auf einem Windows-PC
-
-SQLite war ursprünglich vorgesehen, wird aber nicht verwendet. Die
-Einstellungen liegen als JSON in `data/`, was für den Umfang völlig reicht.
-Die leere Datenbankdatei wurde entfernt.
+Unter Trixie belegt rpi-swap bereits /dev/zram0. Das früher zusätzlich
+installierte zram-tools konnte deshalb nicht starten - setup.sh entfernt
+es jetzt und stellt rpi-swap auf reinen zram-Betrieb ohne Swap-Datei auf
+der SD-Karte.
 
 ---
 
@@ -320,12 +226,11 @@ Die leere Datenbankdatei wurde entfernt.
 config/secrets.php    der API-Key
 data/                 Einstellungen und importierter Kalender
 uploads/              die Bilder
-cache/                der Wetter-Cache
+cache/                Wetter-, Nachrichten- und Kalender-Cache
 ```
 
-Der Grund: Sobald der Pi eine dieser Dateien schreibt, würde `git pull`
-mit einem Konflikt abbrechen. Vorher lagen die Bilder mit im Repository -
-das war ein Fehler, der beim Deployment regelmäßig im Weg stand.
+Sobald der Pi eine dieser Dateien schreibt, würde `git pull` sonst mit
+einem Konflikt abbrechen.
 
 **Folge:** Hochgeladene Bilder existieren nur auf der SD-Karte des Pi. Ein
 automatisches Backup gibt es bewusst nicht. Die Originale liegen auf dem
@@ -341,30 +246,20 @@ Aufruf mit `bad interpreter: bash^M`.
 
 # Offene Punkte
 
-## Infrastruktur
+## Abschluss
 
-* [x] Projekt von root auf den Benutzer mirror migrieren
-* [x] Rechte für Nginx und PHP anpassen
-* [x] Deployment-Skript erstellen
-* [x] Setup-Skript für einen frischen Pi
-* [x] Raspberry Pi für den Dauerbetrieb optimieren
-* [ ] Automatische Backups (bewusst zurückgestellt)
+* [ ] Kiosk auf dem Pi testen, Drehung bestätigen
+* [ ] Pi ins neue WLAN bringen (zusätzliches NetworkManager-Profil)
 
-## Smart Mirror
+## Bewusst zurückgestellt
 
-* [x] Modulare Architektur
-* [x] Dashboard-Layout
-* [x] Uhr- und Datumsmodul
-* [x] Wettermodul mit API und Cache
-* [x] Slideshow und Bildverwaltung
-* [x] Kalenderintegration
-* [x] Systeminformationen
-* [x] Adminbereich mit vollständiger Konfiguration
-* [x] Chromium-Kiosk-Modus
-* [x] Autostart
-* [ ] Benutzer-Login (bewusst zurückgestellt, Heimnetz)
-* [ ] Serientermine im Kalender (RRULE)
-* [ ] Mehrtägige Termine im Kalender
+* [ ] Automatische Backups
+* [ ] Benutzer-Login im Adminbereich (Heimnetz)
+
+## Mögliche Erweiterungen
+
+* [ ] Kalender als Abo-URL statt Datei-Import
+* [ ] Display nachts abschalten
 * [ ] Spotify-Integration
 * [ ] Home-Assistant-Unterstützung
 
@@ -372,16 +267,6 @@ Aufruf mit `bad interpreter: bash^M`.
 
 # Letzter Stand
 
-**Kapitel 9 abgeschlossen.**
-
-Der Smart Mirror ist funktional fertig. Alles, was für einen Neuaufbau des
-Raspberry Pi nötig ist, liegt im Repository - die Anleitung dazu steht in
-`SETUP.md`.
-
-Ein neuer Pi ist mit drei Befehlen wieder online:
-
-```bash
-git clone https://github.com/FloF05/SmartMirror.git
-cd SmartMirror
-sudo deploy/setup.sh
-```
+Der Smart Mirror ist funktional fertig. Offen ist nur noch der Test der
+Anzeige auf dem echten Pi Zero W und der Umzug ins neue WLAN. Die
+Anleitung für einen kompletten Neuaufbau steht in `SETUP.md`.

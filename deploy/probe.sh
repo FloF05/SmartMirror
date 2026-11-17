@@ -76,6 +76,14 @@ else
     printf "  %-28s %s\n" "/dev/dri" "nicht vorhanden"
 fi
 printf "  %-28s %s\n" "Framebuffer" "$(ls /dev/fb* 2>/dev/null | tr '\n' ' ' || echo 'keiner')"
+for connector in /sys/class/drm/card*-*; do
+    [[ -r "$connector/status" ]] || continue
+    printf "  %-28s %s\n" "${connector##*/}" "$(cat "$connector/status")  $(head -1 "$connector/modes" 2>/dev/null)"
+done
+
+line "Swap"
+tail -n +2 /proc/swaps | awk '{ printf "  %-28s %s KiB\n", $1, $3 }'
+[[ -f /etc/rpi/swap.conf.d/50-smartmirror.conf ]] && echo "  rpi-swap: nur zram (SmartMirror)"
 
 line "Webserver"
 printf "  %-28s %s\n" "nginx" "$(systemctl is-active nginx 2>/dev/null || true)"
@@ -86,6 +94,20 @@ printf "  %-28s %s\n" "/var/log/nginx" "$([[ -d /var/log/nginx ]] && echo vorhan
 if [[ "$(systemctl is-active nginx 2>/dev/null || true)" != "active" ]]; then
     line "nginx startet nicht - Details"
     systemctl status nginx --no-pager -l 2>&1 | tail -20 || true
+fi
+
+line "Kiosk"
+if [[ -f /etc/default/smartmirror-kiosk ]]; then
+    grep -E '^(KIOSK_BROWSER|ROTATION|URL|VIDEO_MODE|WLR_RENDERER)=' /etc/default/smartmirror-kiosk | sed 's/^/  /'
+else
+    echo "  /etc/default/smartmirror-kiosk fehlt - Kiosk nicht eingerichtet"
+fi
+printf "  %-28s %s\n" "Dienst aktiviert" "$(systemctl is-enabled smartmirror-kiosk 2>/dev/null || true)"
+printf "  %-28s %s\n" "Dienst Zustand" "$(systemctl is-active smartmirror-kiosk 2>/dev/null || true)"
+printf "  %-28s %s\n" "Laufende Browser" "$(pgrep -a -f 'cog|WPEWebProcess|firefox-esr|chromium|cage' 2>/dev/null | awk '{print $2}' | xargs -r -n1 basename | sort | uniq -c | xargs || true)"
+if systemctl list-unit-files smartmirror-kiosk.service >/dev/null 2>&1; then
+    echo "  Letzte Meldungen:"
+    journalctl -u smartmirror-kiosk -n 15 --no-pager 2>/dev/null | sed 's/^/    /' || true
 fi
 
 printf "\n\033[1;34m== Fertig\033[0m\n"

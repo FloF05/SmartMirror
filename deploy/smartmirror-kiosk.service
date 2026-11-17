@@ -1,59 +1,61 @@
-# Startet den SmartMirror im Vollbild auf dem angeschlossenen Display.
+# Zeigt den SmartMirror nach dem Booten im Vollbild auf dem Display.
 #
-# cage ist ein minimaler Wayland-Compositor: er zeigt genau eine Anwendung
-# im Vollbild - kein Desktop, keine Leisten, kein Mauszeiger.
+# Vorlage: die Platzhalter setzt deploy/setup.sh ein. Welcher Browser läuft
+# und wie das Bild gedreht ist, steht nicht hier, sondern in
 #
-# Vorlage: die Platzhalter setzt deploy/setup.sh automatisch ein.
+#     /etc/default/smartmirror-kiosk
+#
+# Nach einer Änderung dort genügt:
+#
+#     sudo systemctl restart smartmirror-kiosk
 
 [Unit]
-Description=SmartMirror Kiosk (cage + Chromium)
-After=network-online.target nginx.service
+Description=SmartMirror Kiosk
+After=systemd-user-sessions.service network-online.target nginx.service
 Wants=network-online.target
+
+# Der Kiosk übernimmt tty1. Die Login-Konsole dort würde sich sonst mit
+# ihm um den Bildschirm streiten.
+Conflicts=getty@tty1.service
+After=getty@tty1.service
+
+# Startet der Browser auf dieser Hardware gar nicht, nicht endlos neu
+# versuchen - auf einem Kern würde das den ganzen Pi lahmlegen. Ein
+# gelegentlicher Absturz im Dauerbetrieb liegt weit unter dieser Grenze.
+StartLimitIntervalSec=600
+StartLimitBurst=6
 
 [Service]
 Type=simple
 
 User=__USER__
-Group=__USER__
+SupplementaryGroups=video render input
+
+# Eine echte Sitzung auf seat0 und tty1. Erst dadurch geben systemd-logind
+# und udev dem Kiosk Bildschirm und Eingabegeräte frei.
+PAMName=smartmirror-kiosk
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+StandardInput=tty-fail
+StandardOutput=journal
+StandardError=journal
+UtmpIdentifier=tty1
+UtmpMode=user
 
 Environment=XDG_RUNTIME_DIR=/run/user/__UID__
 
-# Ohne das bricht cage ab, wenn weder Maus noch Tastatur angeschlossen sind -
-# beim Spiegel also im Normalbetrieb.
+# Ohne das bricht cage ab, wenn weder Maus noch Tastatur angeschlossen
+# sind - beim Spiegel also im Normalbetrieb.
 Environment=WLR_LIBINPUT_NO_DEVICES=1
 
-# Display-Drehung für das Hochformat-Panel.
-# Steht das Bild auf dem Kopf, hier auf 270 wechseln:
-#     sudo systemctl edit --full smartmirror-kiosk
-# Bei einem normalen Querformat-Display die Zeile auskommentieren.
-Environment=WLR_OUTPUT_TRANSFORM=__ROTATION__
+EnvironmentFile=-/etc/default/smartmirror-kiosk
 
-# Erst starten, wenn der Webserver wirklich antwortet - sonst zeigt
-# Chromium beim Booten eine Fehlerseite und bleibt dabei stehen.
-ExecStartPre=/bin/sh -c 'until curl -sf -o /dev/null http://localhost/; do sleep 2; done'
-
-ExecStart=/usr/bin/cage -d -- __CHROMIUM__ \
-    --kiosk \
-    --noerrdialogs \
-    --disable-infobars \
-    --disable-session-crashed-bubble \
-    --disable-features=Translate,TranslateUI \
-    --no-first-run \
-    --check-for-update-interval=31536000 \
-    --autoplay-policy=no-user-gesture-required \
-    --overscroll-history-navigation=0 \
-    --disable-pinch \
-    http://localhost/
+ExecStart=__PROJECT_DIR__/deploy/kiosk.sh
 
 Restart=always
 RestartSec=5
-
-TTYPath=/dev/tty1
-StandardInput=tty
-StandardOutput=journal
-StandardError=journal
-TTYReset=yes
-TTYVHangup=yes
 
 [Install]
 WantedBy=multi-user.target

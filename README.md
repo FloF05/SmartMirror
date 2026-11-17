@@ -7,9 +7,10 @@ Kiosk-Modus auf dem Display anzeigt. Alle Inhalte lassen sich über einen
 Adminbereich im Browser verwalten – der Spiegel lädt sich nach jeder
 Änderung von selbst neu.
 
-> Auf ARMv6-Hardware (Pi Zero W, Pi 1) richtet `setup.sh` nur den Server
-> ein – für diese CPU gibt es kein Chromium. Welcher Browser dort die
-> Anzeige übernehmen kann, klärt `deploy/probe.sh`.
+Auf dem Pi Zero W (ARMv6, ein Kern, 512 MB) zeichnet **cog** – ein
+schlanker Kiosk-Browser auf Basis von WPE WebKit – direkt auf das Display,
+ohne Desktop und ohne Compositor. Chromium braucht ARMv7 und kommt erst ab
+Pi 3 oder Zero 2 W zum Einsatz.
 
 ## Module
 
@@ -18,7 +19,7 @@ Adminbereich im Browser verwalten – der Spiegel lädt sich nach jeder
 | Uhr | Uhrzeit, deutsches Datum, Begrüßung, Kalenderwoche |
 | Wetter | Aktuell, 4-Tage-Vorhersage, Sonnenzeiten, Mondphase, Luftqualität |
 | Countdown | Tage bis zu frei wählbaren Terminen |
-| Termine | Agenda oder Monatsraster aus ICS, inklusive deutscher Feiertage |
+| Termine | Agenda oder Monatsraster aus ICS – mit Serien- und mehrtägigen Terminen und deutschen Feiertagen |
 | Listen | Einkaufs- oder To-do-Liste, im Adminbereich pflegbar |
 | Nachrichten | Schlagzeilen aus einem RSS-Feed |
 | Zitat | Wechselt täglich, ohne Netzwerk |
@@ -48,7 +49,7 @@ SmartMirror/
 ├── api/          JSON-Endpunkte für Wetter, Kalender, Systeminfo, Refresh
 ├── admin/        Weboberfläche zur Verwaltung
 ├── css/          Layout des Dashboards
-├── deploy/       Setup-Skript, Nginx-Konfiguration, Kiosk-Dienst
+├── deploy/       Setup, Update, Kiosk-Start, Nginx-Vorlage, Prüfskript
 │
 ├── data/         Laufzeitdaten – nicht in Git
 ├── uploads/      Bilder – nicht in Git
@@ -78,7 +79,11 @@ Ausrollen auf den Pi:
 deploy/update.sh
 ```
 
+Browser und Display-Drehung des Kiosks stehen auf dem Pi in
+`/etc/default/smartmirror-kiosk` – siehe [SETUP.md](SETUP.md), Schritt 6.
+
 ## Technik
 
-Raspberry Pi OS Lite · Nginx · PHP-FPM · Chromium im Kiosk-Modus über cage
-(Wayland) · OpenWeather API
+Raspberry Pi OS Lite (32 Bit, Trixie) · Nginx · PHP-FPM · cog / WPE WebKit
+direkt auf DRM/KMS (Pi Zero W) oder Chromium in cage (ab ARMv7) ·
+OpenWeather API
